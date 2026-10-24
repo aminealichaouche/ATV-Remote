@@ -1,0 +1,12 @@
+{
+  "source": "User-provided Remote_Icon_Top_Right.png; visually matched to the attached logo",
+  "master": "design/assets/atv-remote-app-icon-master.png",
+  "source_sha256": "ed4d5702612a564af9b2b14bc3604024916f8ecbd8aa09e6aff2a0f42ef38c9b",
+  "master_byte_matches_original": true,
+  "source_dimensions": [
+    1254,
+    1254
+  ],
+  "processing": "CoreGraphics resamples to an opaque sRGB 1024px iOS app icon. No redraw, AI edit, crop, rotation, or rounded-corner mask.",
+  "previous_master": "design/assets/atv-remote-app-icon-0.3.32.png"
+}

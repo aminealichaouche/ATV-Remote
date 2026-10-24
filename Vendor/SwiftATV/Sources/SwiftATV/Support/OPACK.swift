@@ -1,0 +1,738 @@
+import Foundation
+
+/// OPACK binary serialization format used by the Companion protocol.
+public enum OPACK {
+
+    // MARK: - Constants
+
+    private static let terminator: UInt8 = 0x03
+    private static let trueValue: UInt8 = 0x01
+    private static let falseValue: UInt8 = 0x02
+    private static let nilValue: UInt8 = 0x04
+    private static let uuidValue: UInt8 = 0x05
+    private static let absoluteTime: UInt8 = 0x06
+    private static let negativeOneValue: UInt8 = 0x07
+
+    // Integer ranges
+    private static let inlineIntBase: UInt8 = 0x08
+    private static let inlineIntMax: UInt8 = 0x2F  // 0-39 inline
+    private static let int8Tag: UInt8 = 0x30
+    private static let int16Tag: UInt8 = 0x31
+    private static let int32Tag: UInt8 = 0x32
+    private static let int64Tag: UInt8 = 0x33
+
+    // Negative integer tags
+    private static let negInt8Tag: UInt8 = 0x38
+    private static let negInt16Tag: UInt8 = 0x39
+    private static let negInt32Tag: UInt8 = 0x3A
+    private static let negInt64Tag: UInt8 = 0x3B
+
+    // Float
+    private static let float32Tag: UInt8 = 0x35
+    private static let float64Tag: UInt8 = 0x36
+
+    // String (inline 0x40-0x60, extended 0x61-0x64)
+    private static let inlineStringBase: UInt8 = 0x40
+    private static let inlineStringMax: UInt8 = 0x60  // 0-32 inline
+    private static let string8Tag: UInt8 = 0x61
+    private static let string16Tag: UInt8 = 0x62
+    private static let string24Tag: UInt8 = 0x63
+    private static let string32Tag: UInt8 = 0x64
+
+    // Data (inline 0x70-0x90, extended 0x91-0x94)
+    private static let inlineDataBase: UInt8 = 0x70
+    private static let inlineDataMax: UInt8 = 0x90  // 0-32 inline
+    private static let data8Tag: UInt8 = 0x91
+    private static let data16Tag: UInt8 = 0x92
+    private static let data32Tag: UInt8 = 0x93
+    private static let data64Tag: UInt8 = 0x94
+
+    // Object references (0xA0-0xC0 inline, 0xC1-0xC4 with 1...4 byte indexes)
+    private static let objectRefBase: UInt8 = 0xA0
+    private static let objectRefMax: UInt8 = 0xC0
+    private static let objectRef8Tag: UInt8 = 0xC1
+    private static let objectRef16Tag: UInt8 = 0xC2
+    private static let objectRef24Tag: UInt8 = 0xC3
+    private static let objectRef32Tag: UInt8 = 0xC4
+
+    // Lists (0xD0-0xDE fixed, 0xDF endless)
+    private static let listBase: UInt8 = 0xD0
+    private static let endlessList: UInt8 = 0xDF
+
+    // Dicts (0xE0-0xEE fixed, 0xEF endless)
+    private static let dictBase: UInt8 = 0xE0
+    private static let endlessDict: UInt8 = 0xEF
+
+    // MARK: - OPACKValue
+
+    /// Represents any value that can be encoded/decoded in OPACK format.
+    public enum Value: Sendable, CustomStringConvertible {
+        case null
+        case bool(Bool)
+        case int(Int64)
+        case uint(UInt64)
+        case float(Float)
+        case double(Double)
+        case string(String)
+        case data(Data)
+        case uuid(UUID)
+        case array([Value])
+        case dict([(Value, Value)])
+
+        public var description: String {
+            switch self {
+            case .null: return "null"
+            case .bool(let v): return "\(v)"
+            case .int(let v): return "\(v)"
+            case .uint(let v): return "\(v)"
+            case .float(let v): return "\(v)"
+            case .double(let v): return "\(v)"
+            case .string(let v): return "\"\(v)\""
+            case .data(let v): return "<\(v.count) bytes>"
+            case .uuid(let v): return v.uuidString
+            case .array(let v): return "[\(v.count) items]"
+            case .dict(let v): return "{\(v.count) pairs}"
+            }
+        }
+
+        /// Helper to get as String.
+        public var stringValue: String? {
+            if case .string(let s) = self { return s }
+            return nil
+        }
+
+        /// Helper to get as Int64.
+        public var intValue: Int64? {
+            switch self {
+            case .int(let v): return v
+            case .uint(let v): return Int64(exactly: v)
+            default: return nil
+            }
+        }
+
+        /// Helper to get as Data.
+        public var dataValue: Data? {
+            if case .data(let d) = self { return d }
+            return nil
+        }
+
+        /// Helper to get as Bool.
+        public var boolValue: Bool? {
+            if case .bool(let b) = self { return b }
+            return nil
+        }
+
+        /// Helper to get dict value by string key.
+        public subscript(key: String) -> Value? {
+            guard case .dict(let pairs) = self else { return nil }
+            for (k, v) in pairs {
+                if case .string(let s) = k, s == key { return v }
+            }
+            return nil
+        }
+
+        /// Helper to get array element by index.
+        public subscript(index: Int) -> Value? {
+            guard case .array(let arr) = self, index >= 0, index < arr.count else { return nil }
+            return arr[index]
+        }
+    }
+
+    // MARK: - Encoding
+
+    /// Encode a value to OPACK binary format.
+    public static func encode(_ value: Value) -> Data {
+        var data = Data()
+        encodeValue(value, into: &data)
+        return data
+    }
+
+    private static func encodeValue(_ value: Value, into data: inout Data) {
+        switch value {
+        case .null:
+            data.append(nilValue)
+
+        case .bool(let v):
+            data.append(v ? trueValue : falseValue)
+
+        case .int(let v):
+            if v >= 0 {
+                encodeUInt(UInt64(v), into: &data)
+            } else {
+                encodeNegInt(v, into: &data)
+            }
+
+        case .uint(let v):
+            encodeUInt(v, into: &data)
+
+        case .float(let v):
+            data.append(float32Tag)
+            var le = v.bitPattern.littleEndian
+            data.append(Data(bytes: &le, count: 4))
+
+        case .double(let v):
+            data.append(float64Tag)
+            var le = v.bitPattern.littleEndian
+            data.append(Data(bytes: &le, count: 8))
+
+        case .string(let s):
+            let bytes = Array(s.utf8)
+            let len = bytes.count
+            if len <= 32 {
+                data.append(inlineStringBase + UInt8(len))
+            } else if len <= 0xFF {
+                data.append(string8Tag)
+                data.append(UInt8(len))
+            } else if len <= 0xFFFF {
+                data.append(string16Tag)
+                var le = UInt16(len).littleEndian
+                data.append(Data(bytes: &le, count: 2))
+            } else {
+                data.append(string32Tag)
+                var le = UInt32(len).littleEndian
+                data.append(Data(bytes: &le, count: 4))
+            }
+            data.append(contentsOf: bytes)
+
+        case .data(let d):
+            let len = d.count
+            if len <= 32 {
+                data.append(inlineDataBase + UInt8(len))
+            } else if len <= 0xFF {
+                data.append(data8Tag)
+                data.append(UInt8(len))
+            } else if len <= 0xFFFF {
+                data.append(data16Tag)
+                var le = UInt16(len).littleEndian
+                data.append(Data(bytes: &le, count: 2))
+            } else {
+                data.append(data32Tag)
+                var le = UInt32(len).littleEndian
+                data.append(Data(bytes: &le, count: 4))
+            }
+            data.append(d)
+
+        case .uuid(let u):
+            data.append(uuidValue)
+            let uuid = u.uuid
+            data.append(contentsOf: [
+                uuid.0, uuid.1, uuid.2, uuid.3,
+                uuid.4, uuid.5, uuid.6, uuid.7,
+                uuid.8, uuid.9, uuid.10, uuid.11,
+                uuid.12, uuid.13, uuid.14, uuid.15,
+            ])
+
+        case .array(let arr):
+            let count = arr.count
+            if count <= 14 {
+                data.append(listBase + UInt8(count))
+            } else {
+                data.append(endlessList)
+            }
+            for item in arr {
+                encodeValue(item, into: &data)
+            }
+            if count > 14 {
+                data.append(terminator)
+            }
+
+        case .dict(let pairs):
+            let count = pairs.count
+            if count <= 14 {
+                data.append(dictBase + UInt8(count))
+            } else {
+                data.append(endlessDict)
+            }
+            for (key, val) in pairs {
+                encodeValue(key, into: &data)
+                encodeValue(val, into: &data)
+            }
+            if count > 14 {
+                data.append(terminator)
+            }
+        }
+    }
+
+    private static func encodeUInt(_ value: UInt64, into data: inout Data) {
+        if value <= 39 {
+            data.append(inlineIntBase + UInt8(value))
+        } else if value <= 0xFF {
+            data.append(int8Tag)
+            data.append(UInt8(value))
+        } else if value <= 0xFFFF {
+            data.append(int16Tag)
+            var le = UInt16(value).littleEndian
+            data.append(Data(bytes: &le, count: 2))
+        } else if value <= 0xFFFF_FFFF {
+            data.append(int32Tag)
+            var le = UInt32(value).littleEndian
+            data.append(Data(bytes: &le, count: 4))
+        } else {
+            data.append(int64Tag)
+            var le = value.littleEndian
+            data.append(Data(bytes: &le, count: 8))
+        }
+    }
+
+    private static func encodeNegInt(_ value: Int64, into data: inout Data) {
+        if value == -1 {
+            data.append(negativeOneValue)
+            return
+        }
+        let absVal =
+            value == Int64.min
+            ? UInt64(Int64.max) + 1
+            : UInt64(-value)
+        if absVal <= 0xFF {
+            data.append(negInt8Tag)
+            data.append(UInt8(absVal))
+        } else if absVal <= 0xFFFF {
+            data.append(negInt16Tag)
+            var le = UInt16(absVal).littleEndian
+            data.append(Data(bytes: &le, count: 2))
+        } else if absVal <= 0xFFFF_FFFF {
+            data.append(negInt32Tag)
+            var le = UInt32(absVal).littleEndian
+            data.append(Data(bytes: &le, count: 4))
+        } else {
+            data.append(negInt64Tag)
+            var le = absVal.littleEndian
+            data.append(Data(bytes: &le, count: 8))
+        }
+    }
+
+    // MARK: - Decoding
+
+    /// Room Remote limits input to 1 MiB, nesting to 32 levels, decoded nodes
+    /// to 32,768, and scalar comparison work to 16 MiB-equivalent operations.
+    private struct DecodeBudget {
+        var remainingNodes = 32_768
+        var comparisonWork = 16_777_216
+    }
+
+    private static func comparisonCost(_ value: Value) -> Int {
+        switch value {
+        case .string(let text): return max(1, text.utf8.count)
+        case .data(let bytes): return max(1, bytes.count)
+        default: return 16
+        }
+    }
+
+    /// Decode OPACK with input, depth, node, and comparison-work limits.
+    /// Invalid, excessive, or trailing data throws `ATVError.invalidData`.
+    public static func decode(_ data: Data) throws -> Value {
+        guard data.count <= 1_048_576 else {
+            throw ATVError.invalidData("OPACK: payload exceeds 1 MiB limit")
+        }
+        var offset = 0
+        var objectList = [Value]()
+        var budget = DecodeBudget()
+        let value = try decodeValue(data, offset: &offset, objectList: &objectList, budget: &budget, depth: 0)
+        guard offset == data.count else {
+            throw ATVError.invalidData("OPACK: trailing bytes after value")
+        }
+        return value
+    }
+
+    private static func decodeValue(
+        _ data: Data,
+        offset: inout Int,
+        objectList: inout [Value],
+        budget: inout DecodeBudget,
+        depth: Int
+    ) throws -> Value {
+        guard depth <= 32, budget.remainingNodes > 0 else {
+            throw ATVError.invalidData("OPACK: decode depth or node limit exceeded")
+        }
+        budget.remainingNodes -= 1
+        func record(_ value: Value, addToObjectList: Bool = true) throws -> Value {
+            guard addToObjectList else { return value }
+            let cost = comparisonCost(value)
+            for existing in objectList {
+                guard budget.comparisonWork >= cost else {
+                    throw ATVError.invalidData("OPACK: scalar comparison work limit exceeded")
+                }
+                budget.comparisonWork -= cost
+                if valuesEqual(existing, value) { return value }
+            }
+            objectList.append(value)
+            return value
+        }
+
+        guard offset < data.count else {
+            throw ATVError.invalidData("OPACK: unexpected end of data")
+        }
+
+        let tag = data[offset]
+        offset += 1
+
+        switch tag {
+        case nilValue:
+            return try record(.null, addToObjectList: false)
+
+        case trueValue:
+            return try record(.bool(true), addToObjectList: false)
+
+        case falseValue:
+            return try record(.bool(false), addToObjectList: false)
+
+        case uuidValue:
+            guard offset + 16 <= data.count else {
+                throw ATVError.invalidData("OPACK: not enough data for UUID")
+            }
+            let bytes = data[offset..<offset + 16]
+            offset += 16
+            let uuid = UUID(
+                uuid: (
+                    bytes[bytes.startIndex], bytes[bytes.startIndex + 1],
+                    bytes[bytes.startIndex + 2], bytes[bytes.startIndex + 3],
+                    bytes[bytes.startIndex + 4], bytes[bytes.startIndex + 5],
+                    bytes[bytes.startIndex + 6], bytes[bytes.startIndex + 7],
+                    bytes[bytes.startIndex + 8], bytes[bytes.startIndex + 9],
+                    bytes[bytes.startIndex + 10], bytes[bytes.startIndex + 11],
+                    bytes[bytes.startIndex + 12], bytes[bytes.startIndex + 13],
+                    bytes[bytes.startIndex + 14], bytes[bytes.startIndex + 15]
+                ))
+            return try record(.uuid(uuid))
+
+        case absoluteTime:
+            guard offset + 8 <= data.count else {
+                throw ATVError.invalidData("OPACK: not enough data for absolute time")
+            }
+            let val = data.loadLittleEndian(at: offset, as: UInt64.self)
+            offset += 8
+            return try record(.uint(val))
+
+        case negativeOneValue:
+            return try record(.int(-1), addToObjectList: false)
+
+        // Inline integers (0-39)
+        case inlineIntBase...inlineIntMax:
+            return try record(.uint(UInt64(tag - inlineIntBase)), addToObjectList: false)
+
+        // Unsigned integers
+        case int8Tag:
+            let val = try readUInt8(data, offset: &offset)
+            return try record(.uint(UInt64(val)))
+        case int16Tag:
+            let val = try readUInt16LE(data, offset: &offset)
+            return try record(.uint(UInt64(val)))
+        case int32Tag:
+            let val = try readUInt32LE(data, offset: &offset)
+            return try record(.uint(UInt64(val)))
+        case int64Tag:
+            let val = try readUInt64LE(data, offset: &offset)
+            return try record(.uint(val))
+
+        // Negative integers
+        case negInt8Tag:
+            let val = try readUInt8(data, offset: &offset)
+            return try record(.int(try negativeMagnitude(UInt64(val))))
+        case negInt16Tag:
+            let val = try readUInt16LE(data, offset: &offset)
+            return try record(.int(try negativeMagnitude(UInt64(val))))
+        case negInt32Tag:
+            let val = try readUInt32LE(data, offset: &offset)
+            return try record(.int(try negativeMagnitude(UInt64(val))))
+        case negInt64Tag:
+            let val = try readUInt64LE(data, offset: &offset)
+            return try record(.int(try negativeMagnitude(val)))
+
+        // Floats
+        case float32Tag:
+            guard offset + 4 <= data.count else {
+                throw ATVError.invalidData("OPACK: not enough data for float32")
+            }
+            let bits = data.loadLittleEndian(at: offset, as: UInt32.self)
+            offset += 4
+            return try record(.float(Float(bitPattern: bits)))
+
+        case float64Tag:
+            guard offset + 8 <= data.count else {
+                throw ATVError.invalidData("OPACK: not enough data for float64")
+            }
+            let bits = data.loadLittleEndian(at: offset, as: UInt64.self)
+            offset += 8
+            return try record(.double(Double(bitPattern: bits)))
+
+        // Inline strings (0-32 bytes)
+        case inlineStringBase...inlineStringMax:
+            let len = Int(tag - inlineStringBase)
+            return try record(readString(data, offset: &offset, length: len))
+
+        // Extended strings
+        case string8Tag:
+            let len = Int(try readUInt8(data, offset: &offset))
+            return try record(readString(data, offset: &offset, length: len))
+        case string16Tag:
+            let len = Int(try readUInt16LE(data, offset: &offset))
+            return try record(readString(data, offset: &offset, length: len))
+        case string24Tag:
+            let b0 = try readUInt8(data, offset: &offset)
+            let b1 = try readUInt8(data, offset: &offset)
+            let b2 = try readUInt8(data, offset: &offset)
+            let len = Int(b0) | (Int(b1) << 8) | (Int(b2) << 16)
+            return try record(readString(data, offset: &offset, length: len))
+        case string32Tag:
+            let len = Int(try readUInt32LE(data, offset: &offset))
+            return try record(readString(data, offset: &offset, length: len))
+
+        // Inline data (0-32 bytes)
+        case inlineDataBase...inlineDataMax:
+            let len = Int(tag - inlineDataBase)
+            return try record(readData(data, offset: &offset, length: len))
+
+        // Extended data
+        case data8Tag:
+            let len = Int(try readUInt8(data, offset: &offset))
+            return try record(readData(data, offset: &offset, length: len))
+        case data16Tag:
+            let len = Int(try readUInt16LE(data, offset: &offset))
+            return try record(readData(data, offset: &offset, length: len))
+        case data32Tag:
+            let len = Int(try readUInt32LE(data, offset: &offset))
+            return try record(readData(data, offset: &offset, length: len))
+        case data64Tag:
+            let len = try intLength(try readUInt64LE(data, offset: &offset))
+            return try record(readData(data, offset: &offset, length: len))
+
+        // Object references
+        case objectRefBase...objectRefMax:
+            let index = Int(tag - objectRefBase)
+            return try objectReference(index, from: objectList)
+        case objectRef8Tag:
+            let index = try readObjectReferenceIndex(data, offset: &offset, byteCount: 1)
+            return try objectReference(index, from: objectList)
+        case objectRef16Tag:
+            let index = try readObjectReferenceIndex(data, offset: &offset, byteCount: 2)
+            return try objectReference(index, from: objectList)
+        case objectRef24Tag:
+            let index = try readObjectReferenceIndex(data, offset: &offset, byteCount: 3)
+            return try objectReference(index, from: objectList)
+        case objectRef32Tag:
+            let index = try readObjectReferenceIndex(data, offset: &offset, byteCount: 4)
+            return try objectReference(index, from: objectList)
+
+        // Fixed-size lists
+        case listBase...0xDE:
+            let count = Int(tag - listBase)
+            var arr = [Value]()
+            arr.reserveCapacity(count)
+            for _ in 0..<count {
+                arr.append(try decodeValue(data, offset: &offset, objectList: &objectList, budget: &budget, depth: depth + 1))
+            }
+            return try record(.array(arr), addToObjectList: false)
+
+        // Endless list
+        case endlessList:
+            var arr = [Value]()
+            while true {
+                guard offset < data.count else {
+                    throw ATVError.invalidData("OPACK: missing endless list terminator")
+                }
+                if data[offset] == terminator {
+                    offset += 1
+                    break
+                }
+                arr.append(try decodeValue(data, offset: &offset, objectList: &objectList, budget: &budget, depth: depth + 1))
+            }
+            return try record(.array(arr), addToObjectList: false)
+
+        // Fixed-size dicts
+        case dictBase...0xEE:
+            let count = Int(tag - dictBase)
+            var pairs = [(Value, Value)]()
+            pairs.reserveCapacity(count)
+            for _ in 0..<count {
+                let key = try decodeValue(data, offset: &offset, objectList: &objectList, budget: &budget, depth: depth + 1)
+                let val = try decodeValue(data, offset: &offset, objectList: &objectList, budget: &budget, depth: depth + 1)
+                pairs.append((key, val))
+            }
+            return try record(.dict(pairs), addToObjectList: false)
+
+        // Endless dict
+        case endlessDict:
+            var pairs = [(Value, Value)]()
+            while true {
+                guard offset < data.count else {
+                    throw ATVError.invalidData("OPACK: missing endless dict terminator")
+                }
+                if data[offset] == terminator {
+                    offset += 1
+                    break
+                }
+                let key = try decodeValue(data, offset: &offset, objectList: &objectList, budget: &budget, depth: depth + 1)
+                let val = try decodeValue(data, offset: &offset, objectList: &objectList, budget: &budget, depth: depth + 1)
+                pairs.append((key, val))
+            }
+            return try record(.dict(pairs), addToObjectList: false)
+
+        default:
+            throw ATVError.invalidData("OPACK: unknown tag 0x\(String(tag, radix: 16))")
+        }
+    }
+
+    // MARK: - Read Helpers
+
+    private static func readUInt8(_ data: Data, offset: inout Int) throws -> UInt8 {
+        guard offset < data.count else {
+            throw ATVError.invalidData("OPACK: unexpected end of data reading uint8")
+        }
+        let val = data[offset]
+        offset += 1
+        return val
+    }
+
+    private static func readUInt16LE(_ data: Data, offset: inout Int) throws -> UInt16 {
+        guard offset + 2 <= data.count else {
+            throw ATVError.invalidData("OPACK: unexpected end of data reading uint16")
+        }
+        let val = data.loadLittleEndian(at: offset, as: UInt16.self)
+        offset += 2
+        return val
+    }
+
+    private static func readUInt32LE(_ data: Data, offset: inout Int) throws -> UInt32 {
+        guard offset + 4 <= data.count else {
+            throw ATVError.invalidData("OPACK: unexpected end of data reading uint32")
+        }
+        let val = data.loadLittleEndian(at: offset, as: UInt32.self)
+        offset += 4
+        return val
+    }
+
+    private static func readUInt64LE(_ data: Data, offset: inout Int) throws -> UInt64 {
+        guard offset + 8 <= data.count else {
+            throw ATVError.invalidData("OPACK: unexpected end of data reading uint64")
+        }
+        let val = data.loadLittleEndian(at: offset, as: UInt64.self)
+        offset += 8
+        return val
+    }
+
+    private static func intLength(_ value: UInt64) throws -> Int {
+        guard let length = Int(exactly: value) else {
+            throw ATVError.invalidData("OPACK: length too large")
+        }
+        return length
+    }
+
+    private static func readObjectReferenceIndex(
+        _ data: Data,
+        offset: inout Int,
+        byteCount: Int
+    ) throws -> Int {
+        guard byteCount > 0, byteCount <= 4 else {
+            throw ATVError.invalidData("OPACK: invalid object reference index size")
+        }
+        guard offset + byteCount <= data.count else {
+            throw ATVError.invalidData("OPACK: unexpected end of data reading object reference")
+        }
+
+        var index: UInt64 = 0
+        for shift in 0..<byteCount {
+            index |= UInt64(data[offset + shift]) << UInt64(shift * 8)
+        }
+        offset += byteCount
+        return try intLength(index)
+    }
+
+    private static func negativeMagnitude(_ magnitude: UInt64) throws -> Int64 {
+        let minMagnitude = UInt64(Int64.max) + 1
+        if magnitude == minMagnitude {
+            return Int64.min
+        }
+        guard magnitude <= UInt64(Int64.max) else {
+            throw ATVError.invalidData("OPACK: negative integer magnitude out of range")
+        }
+        return -Int64(magnitude)
+    }
+
+    private static func objectReference(_ index: Int, from objectList: [Value]) throws -> Value {
+        guard objectList.indices.contains(index) else {
+            throw ATVError.invalidData("OPACK: object reference \(index) out of range")
+        }
+        return objectList[index]
+    }
+
+    private static func readString(_ data: Data, offset: inout Int, length: Int) throws -> Value {
+        guard length <= data.count - offset else {
+            throw ATVError.invalidData("OPACK: not enough data for string of length \(length)")
+        }
+        guard let str = String(data: data[offset..<offset + length], encoding: .utf8) else {
+            throw ATVError.invalidData("OPACK: invalid UTF-8 string")
+        }
+        offset += length
+        return .string(str)
+    }
+
+    private static func readData(_ data: Data, offset: inout Int, length: Int) throws -> Value {
+        guard length <= data.count - offset else {
+            throw ATVError.invalidData("OPACK: not enough data for blob of length \(length)")
+        }
+        let d = Data(data[offset..<offset + length])
+        offset += length
+        return .data(d)
+    }
+
+    private static func valuesEqual(_ lhs: Value, _ rhs: Value) -> Bool {
+        switch (lhs, rhs) {
+        case (.null, .null):
+            return true
+        case (.bool(let lhs), .bool(let rhs)):
+            return lhs == rhs
+        case (.int(let lhs), .int(let rhs)):
+            return lhs == rhs
+        case (.uint(let lhs), .uint(let rhs)):
+            return lhs == rhs
+        case (.float(let lhs), .float(let rhs)):
+            return lhs.bitPattern == rhs.bitPattern
+        case (.double(let lhs), .double(let rhs)):
+            return lhs.bitPattern == rhs.bitPattern
+        case (.string(let lhs), .string(let rhs)):
+            return lhs == rhs
+        case (.data(let lhs), .data(let rhs)):
+            return lhs == rhs
+        case (.uuid(let lhs), .uuid(let rhs)):
+            return lhs == rhs
+        case (.array(let lhs), .array(let rhs)):
+            guard lhs.count == rhs.count else { return false }
+            for (lhsValue, rhsValue) in zip(lhs, rhs) {
+                if !valuesEqual(lhsValue, rhsValue) { return false }
+            }
+            return true
+        case (.dict(let lhs), .dict(let rhs)):
+            guard lhs.count == rhs.count else { return false }
+            for (lhsPair, rhsPair) in zip(lhs, rhs) {
+                if !valuesEqual(lhsPair.0, rhsPair.0) || !valuesEqual(lhsPair.1, rhsPair.1) {
+                    return false
+                }
+            }
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+// MARK: - Data Extension for Little-Endian Loading
+
+extension Data {
+    func loadLittleEndian<T: FixedWidthInteger>(at offset: Int, as type: T.Type) -> T {
+        var value: T = 0
+        let size = MemoryLayout<T>.size
+        _ = Swift.withUnsafeMutableBytes(of: &value) { dest in
+            self.copyBytes(to: dest, from: offset..<offset + size)
+        }
+        return T(littleEndian: value)
+    }
+}
+
+// MARK: - Convenience Builders
+
+extension OPACK.Value {
+    /// Build a dict from string-keyed pairs.
+    public static func dictionary(_ pairs: [(String, OPACK.Value)]) -> OPACK.Value {
+        .dict(pairs.map { (.string($0.0), $0.1) })
+    }
+}

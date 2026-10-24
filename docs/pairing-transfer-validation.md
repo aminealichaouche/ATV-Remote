@@ -1,0 +1,24 @@
+# Pairing transfer validation, version 0.2
+
+[RoomRemote-0.2.0-unsigned.ipa](../Build/RoomRemote-0.2.0-unsigned.ipa) is an unsigned arm64 iPhoneOS test build for iOS 27 or later, version 0.2.0, build 2. Sign it with your existing sideloading tool. The [sharing guide](share-pairings.md) describes the flow and its limits.
+
+The final iPhone archive succeeded. IPA integrity, architecture, minimum OS, executable permissions, unsigned status, Face ID usage description, custom document registration, resources, and exclusion of DEBUG fixtures were checked. Size: 4,035,524 bytes. SHA-256: `0b608a96773e63a597d1148aa34276994adf8ed9741bd7ad6b389fde38f8170a`. [Package record](../audit/reproductions/pairing-transfer-ipa-validation.json), [archive log](../audit/reproductions/pairing-transfer-archive.log), [current source hashes](../audit/reproductions/pairing-transfer-source-hashes.json).
+
+All **53 core XCTest cases passed on macOS**, using symlinks to the actual app sources and all current app unit tests, with the locally vendored SwiftATV dependency. No driver stubs, TV connections, or Keychain writes were used. This includes 10 Apple credential validation tests, 5 Samsung transfer validation tests, 13 encryption/import-planning tests, 3 atomic registry/recovery tests, and the 22 existing core tests. [Full log](../audit/reproductions/native-core-tests.log).
+
+The initial transfer test found duplicated room copies on repeated import; both ordinary and conflicting-room copies now have passing idempotence regressions. The final native simulator app and test targets compiled. Native transfer UI testing encountered simulator runtime/automation startup problems and does not currently establish a passing UI result. The earlier version 0.1 native room/setup test remains a separate historical result. Physical AirDrop, Files handoff after sideload signing, Face ID cancellation, actual Keychain failure/lock behavior, and two-iPhone TV sessions remain hardware checks.
+
+## Review scope and fixes
+
+- Fresh local owner authentication precedes export of selected saved pairings. An export with pairings off shares only TV/room metadata.
+- Each file uses a fresh cryptographic 160-bit transfer code, HKDF-SHA256, AES-GCM, a random salt, and authenticated format/version context. Only encrypted bytes enter the share sheet; no code is included in that share item. Retained file/code copies do not expire or become globally single use.
+- Files are limited to 1 MiB; JSON nesting is bounded before decode. Device/room counts, identifiers, UTF-8 field lengths, key sizes, controller identity consistency, tokens, certificate pins, device kinds, room references, and versions are validated before import writes.
+- The receiver previews and explicitly approves the setup. Existing identities retain their own names and credentials. Names/IPs alone are not used to substitute an existing TV. Import itself opens no TV connection.
+- Apple export copies per-TV credentials/controller metadata and preserves the receiving installation's global identity. A published import returns ownership before cancellation handling so batch cleanup can target its own writes. Samsung exact-record no-ops do not become rollback-owned records.
+- Imported secrets use app-generated, device-scoped Keychain accounts. Same-device import/connect/delete races are guarded. Original pairings cannot be silently replaced by import.
+- The nonsecret recovery journal is written before secret staging and cannot be overwritten by a later import. An atomic registry commit precedes journal deletion. Interrupted imports expose unassigned profiles for Connect/Re-pair/Remove; multiple Keychain writes and cleanup are separate operations and may require recovery.
+- Incoming files are queued during cold foreground activation. File reads are security scoped, coordinated, and bounded. Transfer screens mask content while inactive and clear their temporary state on background/close. Explicit clipboard copying uses local-only storage with five-minute expiry; system text-selection copying of the code is disabled.
+
+This review and tests cover the stated implementation paths. They are not a guarantee of hardware compatibility, exhaustive dependency security, globally revocable credential copies, or atomic multi-record Keychain storage.
+
+Apple's device-only Keychain class prevents automatic migration through a different device's backup; this feature explicitly reads owner-approved records and saves them into the receiving app's Keychain. [Apple Keychain accessibility](https://developer.apple.com/documentation/security/ksecattraccessiblewhenunlockedthisdeviceonly). Reusing Companion credentials is supported by the reference implementation's restore flow; shared-controller and concurrent-use implications here remain a protocol inference requiring physical validation. [pyatv credential restoration](https://pyatv.dev/development/scan_pair_and_connect/).

@@ -1,0 +1,218 @@
+import XCTest
+
+@testable import SwiftATV
+
+/// Tests for Settings types
+final class SettingsTests: XCTestCase {
+
+    // MARK: - ATVSettings
+
+    func testSettingsDefaults() {
+        let settings = ATVSettings()
+        XCTAssertEqual(settings.clientIdentity.name, "SwiftATV")
+        XCTAssertEqual(settings.clientIdentity.macAddress, "02:73:77:69:66:74")
+        XCTAssertEqual(settings.clientIdentity.model, "iPhone10,6")
+        XCTAssertEqual(settings.clientIdentity.deviceID, "FF:70:79:61:74:76")
+        XCTAssertFalse(settings.clientIdentity.pairingIdentifier.isEmpty)
+        XCTAssertTrue(settings.clientIdentity.rapportIdentifier.isLowercaseHexIdentifier)
+        XCTAssertNil(settings.protocols.companion.credentials)
+        XCTAssertNil(settings.protocols.mrp.credentials)
+        XCTAssertNil(settings.protocols.airplay.credentials)
+    }
+
+    func testSettingsCodable() throws {
+        var settings = ATVSettings()
+        settings.protocols.companion.credentials = "test-cred"
+        settings.protocols.airplay.airPlayVersion = .v2
+        settings.protocols.airplay.mrpTunnelMode = .force
+        settings.clientIdentity.name = "My Device"
+        settings.clientIdentity.model = "iPhone15,2"
+        settings.clientIdentity.pairingIdentifier = "remote-id"
+        settings.clientIdentity.rapportIdentifier = "abcdef123456"
+
+        let data = try JSONEncoder().encode(settings)
+        let decoded = try JSONDecoder().decode(ATVSettings.self, from: data)
+
+        XCTAssertEqual(decoded.protocols.companion.credentials, "test-cred")
+        XCTAssertEqual(decoded.protocols.airplay.airPlayVersion, .v2)
+        XCTAssertEqual(decoded.protocols.airplay.mrpTunnelMode, .force)
+        XCTAssertEqual(decoded.clientIdentity.name, "My Device")
+        XCTAssertEqual(decoded.clientIdentity.model, "iPhone15,2")
+        XCTAssertEqual(decoded.clientIdentity.pairingIdentifier, "remote-id")
+        XCTAssertEqual(decoded.clientIdentity.rapportIdentifier, "abcdef123456")
+    }
+
+    // MARK: - Credentials accessor
+
+    func testCredentialsGet() {
+        var settings = ATVSettings()
+        settings.protocols.mrp.credentials = "mrp-cred"
+        settings.protocols.companion.credentials = "comp-cred"
+        settings.protocols.airplay.credentials = "airplay-cred"
+
+        XCTAssertEqual(settings.credentials(for: .mrp), "mrp-cred")
+        XCTAssertEqual(settings.credentials(for: .companion), "comp-cred")
+        XCTAssertEqual(settings.credentials(for: .airPlay), "airplay-cred")
+    }
+
+    func testCredentialsSet() {
+        var settings = ATVSettings()
+        settings.setCredentials("mrp-cred", for: .mrp)
+        settings.setCredentials("comp-cred", for: .companion)
+
+        XCTAssertEqual(settings.credentials(for: .mrp), "mrp-cred")
+        XCTAssertEqual(settings.credentials(for: .companion), "comp-cred")
+    }
+
+    func testApplyPairingResultStoresProtocolCredentialsAndIdentifier() {
+        let credentials = HAPCredentials(
+            ltpk: Data([0x01]),
+            ltsk: Data([0x02]),
+            atvIdentifier: Data([0x03]),
+            clientIdentifier: Data([0x04])
+        )
+        let service = ServiceInfo(protocol: .companion, port: 49153, identifier: "companion-id")
+        let result = PairingResult(service: service, credentials: credentials)
+
+        var settings = ATVSettings()
+        settings.apply(result)
+
+        XCTAssertEqual(settings.protocols.companion.credentials, "01:02:03:04")
+        XCTAssertEqual(settings.protocols.companion.identifier, "companion-id")
+        XCTAssertEqual(settings.applying(result).protocols.companion.credentials, "01:02:03:04")
+    }
+
+    func testSettingsVaultReturnsDefaultsWhenConfigurationHasNoIdentifiers() {
+        let vault = ATVSettingsVault()
+        var defaults = ATVSettings()
+        defaults.protocols.mrp.credentials = "default-mrp"
+
+        let settings = vault.settings(
+            for: AppleTVConfiguration(address: "127.0.0.1", name: "Test"),
+            defaultSettings: defaults
+        )
+
+        XCTAssertEqual(settings.protocols.mrp.credentials, "default-mrp")
+    }
+
+    func testSettingsVaultStoresAndFindsByAnyKnownIdentifier() {
+        var config = AppleTVConfiguration(address: "127.0.0.1", name: "Test", identifier: "device-id")
+        config.addService(ServiceInfo(protocol: .mrp, port: 49152, identifier: "mrp-id"))
+        var settings = ATVSettings()
+        settings.protocols.mrp.credentials = "mrp-cred"
+
+        var vault = ATVSettingsVault()
+        vault.saveSettings(settings, for: config)
+
+        let lookup = AppleTVConfiguration(address: "127.0.0.1", name: "Test", identifier: "mrp-id")
+        XCTAssertEqual(vault.settings(for: lookup).protocols.mrp.credentials, "mrp-cred")
+        XCTAssertEqual(vault.records.count, 1)
+        XCTAssertEqual(vault.records[0].identifiers, ["device-id", "mrp-id"])
+    }
+
+    func testSettingsVaultMergesAliasRecordsAndPreservesIncomingValues() {
+        var firstConfig = AppleTVConfiguration(address: "127.0.0.1", name: "Test", identifier: "first-id")
+        firstConfig.addService(ServiceInfo(protocol: .mrp, port: 49152, identifier: "mrp-id"))
+        var firstSettings = ATVSettings()
+        firstSettings.protocols.mrp.credentials = "old-mrp"
+        firstSettings.protocols.airplay.credentials = "airplay-cred"
+
+        var secondConfig = AppleTVConfiguration(address: "127.0.0.1", name: "Test", identifier: "second-id")
+        secondConfig.addService(ServiceInfo(protocol: .mrp, port: 49152, identifier: "mrp-id"))
+        var secondSettings = ATVSettings()
+        secondSettings.protocols.mrp.credentials = "new-mrp"
+
+        var vault = ATVSettingsVault()
+        vault.saveSettings(firstSettings, for: firstConfig)
+        vault.saveSettings(secondSettings, for: secondConfig)
+
+        XCTAssertEqual(vault.records.count, 1)
+        XCTAssertEqual(vault.records[0].identifiers, ["first-id", "mrp-id", "second-id"])
+        XCTAssertEqual(vault.records[0].settings.protocols.mrp.credentials, "new-mrp")
+        XCTAssertEqual(vault.records[0].settings.protocols.airplay.credentials, "airplay-cred")
+    }
+
+    func testSettingsVaultSavePairingAppliesResult() {
+        let credentials = HAPCredentials(
+            ltpk: Data([0x01]),
+            ltsk: Data([0x02]),
+            atvIdentifier: Data([0x03]),
+            clientIdentifier: Data([0x04])
+        )
+        let service = ServiceInfo(protocol: .airPlay, port: 7000, identifier: "airplay-id")
+        let pairing = PairingResult(service: service, credentials: credentials)
+        let config = AppleTVConfiguration(address: "127.0.0.1", name: "Test", identifier: "device-id")
+
+        var vault = ATVSettingsVault()
+        vault.savePairing(pairing, configuration: config, baseSettings: ATVSettings())
+
+        let settings = vault.settings(for: config)
+        XCTAssertEqual(settings.protocols.airplay.credentials, "01:02:03:04")
+        XCTAssertEqual(settings.protocols.airplay.identifier, "airplay-id")
+    }
+
+    func testSettingsVaultCodable() throws {
+        var settings = ATVSettings()
+        settings.protocols.companion.credentials = "companion-cred"
+        let vault = ATVSettingsVault(
+            records: [ATVSettingsVaultRecord(identifiers: ["device-id"], settings: settings)]
+        )
+
+        let data = try JSONEncoder().encode(vault)
+        let decoded = try JSONDecoder().decode(ATVSettingsVault.self, from: data)
+
+        XCTAssertEqual(decoded, vault)
+    }
+
+    // MARK: - Protocol-specific settings
+
+    func testAirPlaySettingsDefaults() {
+        let settings = AirPlaySettings()
+        XCTAssertNil(settings.identifier)
+        XCTAssertNil(settings.credentials)
+        XCTAssertNil(settings.password)
+        XCTAssertEqual(settings.airPlayVersion, .auto)
+        XCTAssertEqual(settings.mrpTunnelMode, .auto)
+    }
+
+    func testClientIdentitySettingsPairingIdentifier() {
+        let settings = ClientIdentitySettings()
+        XCTAssertFalse(settings.pairingIdentifier.isEmpty)
+        XCTAssertTrue(settings.rapportIdentifier.isLowercaseHexIdentifier)
+    }
+
+    func testClientIdentityDefaultsWhenDecodingMissingFields() throws {
+        let data = "{}".data(using: .utf8)!
+        let settings = try JSONDecoder().decode(ClientIdentitySettings.self, from: data)
+
+        XCTAssertEqual(settings.name, "SwiftATV")
+        XCTAssertEqual(settings.macAddress, "02:73:77:69:66:74")
+        XCTAssertEqual(settings.deviceID, "FF:70:79:61:74:76")
+        XCTAssertFalse(settings.pairingIdentifier.isEmpty)
+        XCTAssertTrue(settings.rapportIdentifier.isLowercaseHexIdentifier)
+    }
+
+    // MARK: - AirPlayVersion and MrpTunnelMode codable
+
+    func testAirPlayVersionCodable() throws {
+        for version in [AirPlayVersion.auto, .v1, .v2] {
+            let data = try JSONEncoder().encode(version)
+            let decoded = try JSONDecoder().decode(AirPlayVersion.self, from: data)
+            XCTAssertEqual(decoded, version)
+        }
+    }
+
+    func testMrpTunnelModeCodable() throws {
+        for mode in [MrpTunnelMode.auto, .force, .disable] {
+            let data = try JSONEncoder().encode(mode)
+            let decoded = try JSONDecoder().decode(MrpTunnelMode.self, from: data)
+            XCTAssertEqual(decoded, mode)
+        }
+    }
+}
+
+extension String {
+    fileprivate var isLowercaseHexIdentifier: Bool {
+        range(of: #"^[0-9a-f]{12}$"#, options: .regularExpression) != nil
+    }
+}

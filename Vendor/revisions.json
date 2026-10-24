@@ -1,0 +1,9 @@
+{
+  "swift-nio": "558f24a4647193b5a0e2104031b71c55d31ff83a",
+  "swift-atomics": "6c89474e62719ddcc1e9614989fff2f68208fe10",
+  "swift-collections": "94cf62b3ba8d4bed62680a282d4c25f9c63c2efb",
+  "swift-system": "c8a44d836fe7913603e246acab7c528c2e780168",
+  "BigInt": "a7ee11486233ba45f5ceee0b8cb3d6629ed450ef",
+  "swift-protobuf": "a008af1a102ff3dd6cc3764bb69bf63226d0f5f6",
+  "SwiftATV": "2cc34befa6826f3824846a73d0a1f674ee7688fe"
+}

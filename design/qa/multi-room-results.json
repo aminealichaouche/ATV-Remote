@@ -1,0 +1,818 @@
+[
+  {
+    "width": 320,
+    "scheme": "light",
+    "checks": [
+      "independent command routing and keyboard",
+      "room default pairs and temporary overrides",
+      "explicit room assignment saving",
+      "single-kind rooms, offline preservation, per-device capabilities",
+      "pairing and pending pairing cancellation on selection",
+      "partial device outage and Wi-Fi outage",
+      "touchpad gesture cancellation and new-device routing"
+    ],
+    "javascriptErrors": [],
+    "geometry": {
+      "rootWidth": 288,
+      "documentWidth": 288,
+      "scrollWidth": 288,
+      "controls": [
+        {
+          "label": "Manage devices",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Living RoomBedroomOffice",
+          "width": 198,
+          "height": 46
+        },
+        {
+          "label": "Manage rooms",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "NoneSamsung S95BDBedroom SamsungOffice Samsung",
+          "width": 250,
+          "height": 46
+        },
+        {
+          "label": "NoneLiving Room Apple TVBedroom Apple TVOffice Apple TV",
+          "width": 250,
+          "height": 46
+        },
+        {
+          "label": "Apple TV",
+          "width": 118,
+          "height": 44
+        },
+        {
+          "label": "Samsung",
+          "width": 118,
+          "height": 44
+        },
+        {
+          "label": "Pair devices",
+          "width": 80.828125,
+          "height": 44
+        },
+        {
+          "label": "Switch to touchpad",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Up",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Left",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "OK",
+          "width": 84,
+          "height": 84
+        },
+        {
+          "label": "Right",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Down",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Back",
+          "width": 76.65625,
+          "height": 78
+        },
+        {
+          "label": "Home",
+          "width": 76.671875,
+          "height": 78
+        },
+        {
+          "label": "Play / pause",
+          "width": 76.671875,
+          "height": 78
+        },
+        {
+          "label": "Samsung volume down",
+          "width": 78,
+          "height": 60
+        },
+        {
+          "label": "Toggle Samsung mute",
+          "width": 78,
+          "height": 60
+        },
+        {
+          "label": "Samsung volume up",
+          "width": 78,
+          "height": 60
+        },
+        {
+          "label": "Keyboard",
+          "width": 75.328125,
+          "height": 58
+        },
+        {
+          "label": "Apps",
+          "width": 75.34375,
+          "height": 58
+        },
+        {
+          "label": "Power",
+          "width": 75.328125,
+          "height": 58
+        }
+      ]
+    }
+  },
+  {
+    "width": 320,
+    "scheme": "dark",
+    "checks": [
+      "independent command routing and keyboard",
+      "room default pairs and temporary overrides",
+      "explicit room assignment saving",
+      "single-kind rooms, offline preservation, per-device capabilities",
+      "pairing and pending pairing cancellation on selection",
+      "partial device outage and Wi-Fi outage",
+      "touchpad gesture cancellation and new-device routing"
+    ],
+    "javascriptErrors": [],
+    "geometry": {
+      "rootWidth": 288,
+      "documentWidth": 288,
+      "scrollWidth": 288,
+      "controls": [
+        {
+          "label": "Manage devices",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Living RoomBedroomOffice",
+          "width": 198,
+          "height": 46
+        },
+        {
+          "label": "Manage rooms",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "NoneSamsung S95BDBedroom SamsungOffice Samsung",
+          "width": 250,
+          "height": 46
+        },
+        {
+          "label": "NoneLiving Room Apple TVBedroom Apple TVOffice Apple TV",
+          "width": 250,
+          "height": 46
+        },
+        {
+          "label": "Apple TV",
+          "width": 118,
+          "height": 44
+        },
+        {
+          "label": "Samsung",
+          "width": 118,
+          "height": 44
+        },
+        {
+          "label": "Pair devices",
+          "width": 80.828125,
+          "height": 44
+        },
+        {
+          "label": "Switch to touchpad",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Up",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Left",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "OK",
+          "width": 84,
+          "height": 84
+        },
+        {
+          "label": "Right",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Down",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Back",
+          "width": 76.65625,
+          "height": 78
+        },
+        {
+          "label": "Home",
+          "width": 76.671875,
+          "height": 78
+        },
+        {
+          "label": "Play / pause",
+          "width": 76.671875,
+          "height": 78
+        },
+        {
+          "label": "Samsung volume down",
+          "width": 78,
+          "height": 60
+        },
+        {
+          "label": "Toggle Samsung mute",
+          "width": 78,
+          "height": 60
+        },
+        {
+          "label": "Samsung volume up",
+          "width": 78,
+          "height": 60
+        },
+        {
+          "label": "Keyboard",
+          "width": 75.328125,
+          "height": 58
+        },
+        {
+          "label": "Apps",
+          "width": 75.34375,
+          "height": 58
+        },
+        {
+          "label": "Power",
+          "width": 75.328125,
+          "height": 58
+        }
+      ]
+    }
+  },
+  {
+    "width": 390,
+    "scheme": "light",
+    "checks": [
+      "independent command routing and keyboard",
+      "room default pairs and temporary overrides",
+      "explicit room assignment saving",
+      "single-kind rooms, offline preservation, per-device capabilities",
+      "pairing and pending pairing cancellation on selection",
+      "partial device outage and Wi-Fi outage",
+      "touchpad gesture cancellation and new-device routing"
+    ],
+    "javascriptErrors": [],
+    "geometry": {
+      "rootWidth": 358,
+      "documentWidth": 358,
+      "scrollWidth": 358,
+      "controls": [
+        {
+          "label": "Manage devices",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Living RoomBedroomOffice",
+          "width": 256,
+          "height": 46
+        },
+        {
+          "label": "Manage rooms",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "NoneSamsung S95BDBedroom SamsungOffice Samsung",
+          "width": 308,
+          "height": 46
+        },
+        {
+          "label": "NoneLiving Room Apple TVBedroom Apple TVOffice Apple TV",
+          "width": 308,
+          "height": 46
+        },
+        {
+          "label": "Apple TV",
+          "width": 147,
+          "height": 44
+        },
+        {
+          "label": "Samsung",
+          "width": 147,
+          "height": 44
+        },
+        {
+          "label": "Pair devices",
+          "width": 80.828125,
+          "height": 44
+        },
+        {
+          "label": "Switch to touchpad",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Up",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Left",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "OK",
+          "width": 84,
+          "height": 84
+        },
+        {
+          "label": "Right",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Down",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Back",
+          "width": 96,
+          "height": 78
+        },
+        {
+          "label": "Home",
+          "width": 96,
+          "height": 78
+        },
+        {
+          "label": "Play / pause",
+          "width": 96,
+          "height": 78
+        },
+        {
+          "label": "Samsung volume down",
+          "width": 97.328125,
+          "height": 60
+        },
+        {
+          "label": "Toggle Samsung mute",
+          "width": 97.34375,
+          "height": 60
+        },
+        {
+          "label": "Samsung volume up",
+          "width": 97.328125,
+          "height": 60
+        },
+        {
+          "label": "Keyboard",
+          "width": 94.65625,
+          "height": 58
+        },
+        {
+          "label": "Apps",
+          "width": 94.671875,
+          "height": 58
+        },
+        {
+          "label": "Power",
+          "width": 94.671875,
+          "height": 58
+        }
+      ]
+    }
+  },
+  {
+    "width": 390,
+    "scheme": "dark",
+    "checks": [
+      "independent command routing and keyboard",
+      "room default pairs and temporary overrides",
+      "explicit room assignment saving",
+      "single-kind rooms, offline preservation, per-device capabilities",
+      "pairing and pending pairing cancellation on selection",
+      "partial device outage and Wi-Fi outage",
+      "touchpad gesture cancellation and new-device routing"
+    ],
+    "javascriptErrors": [],
+    "geometry": {
+      "rootWidth": 358,
+      "documentWidth": 358,
+      "scrollWidth": 358,
+      "controls": [
+        {
+          "label": "Manage devices",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Living RoomBedroomOffice",
+          "width": 256,
+          "height": 46
+        },
+        {
+          "label": "Manage rooms",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "NoneSamsung S95BDBedroom SamsungOffice Samsung",
+          "width": 308,
+          "height": 46
+        },
+        {
+          "label": "NoneLiving Room Apple TVBedroom Apple TVOffice Apple TV",
+          "width": 308,
+          "height": 46
+        },
+        {
+          "label": "Apple TV",
+          "width": 147,
+          "height": 44
+        },
+        {
+          "label": "Samsung",
+          "width": 147,
+          "height": 44
+        },
+        {
+          "label": "Pair devices",
+          "width": 80.828125,
+          "height": 44
+        },
+        {
+          "label": "Switch to touchpad",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Up",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Left",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "OK",
+          "width": 84,
+          "height": 84
+        },
+        {
+          "label": "Right",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Down",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Back",
+          "width": 96,
+          "height": 78
+        },
+        {
+          "label": "Home",
+          "width": 96,
+          "height": 78
+        },
+        {
+          "label": "Play / pause",
+          "width": 96,
+          "height": 78
+        },
+        {
+          "label": "Samsung volume down",
+          "width": 97.328125,
+          "height": 60
+        },
+        {
+          "label": "Toggle Samsung mute",
+          "width": 97.34375,
+          "height": 60
+        },
+        {
+          "label": "Samsung volume up",
+          "width": 97.328125,
+          "height": 60
+        },
+        {
+          "label": "Keyboard",
+          "width": 94.65625,
+          "height": 58
+        },
+        {
+          "label": "Apps",
+          "width": 94.671875,
+          "height": 58
+        },
+        {
+          "label": "Power",
+          "width": 94.671875,
+          "height": 58
+        }
+      ]
+    }
+  },
+  {
+    "width": 736,
+    "scheme": "light",
+    "checks": [
+      "independent command routing and keyboard",
+      "room default pairs and temporary overrides",
+      "explicit room assignment saving",
+      "single-kind rooms, offline preservation, per-device capabilities",
+      "pairing and pending pairing cancellation on selection",
+      "partial device outage and Wi-Fi outage",
+      "touchpad gesture cancellation and new-device routing"
+    ],
+    "javascriptErrors": [],
+    "geometry": {
+      "rootWidth": 704,
+      "documentWidth": 704,
+      "scrollWidth": 704,
+      "controls": [
+        {
+          "label": "Manage devices",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Living RoomBedroomOffice",
+          "width": 288,
+          "height": 46
+        },
+        {
+          "label": "Manage rooms",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "NoneSamsung S95BDBedroom SamsungOffice Samsung",
+          "width": 340,
+          "height": 46
+        },
+        {
+          "label": "NoneLiving Room Apple TVBedroom Apple TVOffice Apple TV",
+          "width": 340,
+          "height": 46
+        },
+        {
+          "label": "Apple TV",
+          "width": 163,
+          "height": 44
+        },
+        {
+          "label": "Samsung",
+          "width": 163,
+          "height": 44
+        },
+        {
+          "label": "Pair devices",
+          "width": 80.828125,
+          "height": 44
+        },
+        {
+          "label": "Switch to touchpad",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Up",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Left",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "OK",
+          "width": 84,
+          "height": 84
+        },
+        {
+          "label": "Right",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Down",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Back",
+          "width": 106.65625,
+          "height": 78
+        },
+        {
+          "label": "Home",
+          "width": 106.671875,
+          "height": 78
+        },
+        {
+          "label": "Play / pause",
+          "width": 106.671875,
+          "height": 78
+        },
+        {
+          "label": "Samsung volume down",
+          "width": 108,
+          "height": 60
+        },
+        {
+          "label": "Toggle Samsung mute",
+          "width": 108,
+          "height": 60
+        },
+        {
+          "label": "Samsung volume up",
+          "width": 108,
+          "height": 60
+        },
+        {
+          "label": "Keyboard",
+          "width": 105.328125,
+          "height": 58
+        },
+        {
+          "label": "Apps",
+          "width": 105.34375,
+          "height": 58
+        },
+        {
+          "label": "Power",
+          "width": 105.328125,
+          "height": 58
+        }
+      ]
+    }
+  },
+  {
+    "width": 736,
+    "scheme": "dark",
+    "checks": [
+      "independent command routing and keyboard",
+      "room default pairs and temporary overrides",
+      "explicit room assignment saving",
+      "single-kind rooms, offline preservation, per-device capabilities",
+      "pairing and pending pairing cancellation on selection",
+      "partial device outage and Wi-Fi outage",
+      "touchpad gesture cancellation and new-device routing"
+    ],
+    "javascriptErrors": [],
+    "geometry": {
+      "rootWidth": 704,
+      "documentWidth": 704,
+      "scrollWidth": 704,
+      "controls": [
+        {
+          "label": "Manage devices",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Living RoomBedroomOffice",
+          "width": 288,
+          "height": 46
+        },
+        {
+          "label": "Manage rooms",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "NoneSamsung S95BDBedroom SamsungOffice Samsung",
+          "width": 340,
+          "height": 46
+        },
+        {
+          "label": "NoneLiving Room Apple TVBedroom Apple TVOffice Apple TV",
+          "width": 340,
+          "height": 46
+        },
+        {
+          "label": "Apple TV",
+          "width": 163,
+          "height": 44
+        },
+        {
+          "label": "Samsung",
+          "width": 163,
+          "height": 44
+        },
+        {
+          "label": "Pair devices",
+          "width": 80.828125,
+          "height": 44
+        },
+        {
+          "label": "Switch to touchpad",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Up",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Left",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "OK",
+          "width": 84,
+          "height": 84
+        },
+        {
+          "label": "Right",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Down",
+          "width": 68,
+          "height": 68
+        },
+        {
+          "label": "Back",
+          "width": 106.65625,
+          "height": 78
+        },
+        {
+          "label": "Home",
+          "width": 106.671875,
+          "height": 78
+        },
+        {
+          "label": "Play / pause",
+          "width": 106.671875,
+          "height": 78
+        },
+        {
+          "label": "Samsung volume down",
+          "width": 108,
+          "height": 60
+        },
+        {
+          "label": "Toggle Samsung mute",
+          "width": 108,
+          "height": 60
+        },
+        {
+          "label": "Samsung volume up",
+          "width": 108,
+          "height": 60
+        },
+        {
+          "label": "Keyboard",
+          "width": 105.328125,
+          "height": 58
+        },
+        {
+          "label": "Apps",
+          "width": 105.34375,
+          "height": 58
+        },
+        {
+          "label": "Power",
+          "width": 105.328125,
+          "height": 58
+        }
+      ]
+    }
+  }
+]

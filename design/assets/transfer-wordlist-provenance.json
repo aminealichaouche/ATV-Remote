@@ -1,0 +1,27 @@
+{
+  "source_url": "https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt",
+  "source_sha256": "addd35536511597a02fa0a9ff1e5284677b8883b83e986e43f15a3db996b903e",
+  "source_bytes": 108800,
+  "source_word_count": 7776,
+  "creator": "Joseph Bonneau",
+  "publisher": "Electronic Frontier Foundation",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "copyright_policy": "https://www.eff.org/copyright",
+  "modifications": [
+    "Numeric dice columns removed",
+    "Hyphenated entries omitted to support hyphen separators"
+  ],
+  "excluded_words": [
+    "drop-down",
+    "felt-tip",
+    "t-shirt",
+    "yo-yo"
+  ],
+  "bundled_word_count": 7772,
+  "bundled_source": "App/Sources/TransferWords.swift",
+  "bundled_source_sha256": "0febc99bd0194384b54ddd5585c1ba84c1ec026e60a97138e58e48fd11f7be0d",
+  "generated_words_per_phrase": 4,
+  "entropy_bits": 51.69628074234138,
+  "phrase_candidates": 3648641283072256
+}

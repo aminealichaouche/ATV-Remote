@@ -1,0 +1,334 @@
+<div id="tv-remote-design" aria-label="iPhone remote design">
+  <div class="remote-phone" aria-label="Remote interface">
+    <div class="remote-preview">DESIGN PREVIEW · SIMULATED DEVICES</div>
+    <header class="remote-header">
+      <div><div class="remote-eyebrow">REMOTE</div><h2 data-room-title>Living Room</h2></div>
+      <button type="button" class="remote-icon" data-open="devices" aria-label="Manage devices"><i data-lucide="settings-2" aria-hidden="true"></i></button>
+    </header>
+    <div class="remote-pickers" aria-label="Room and devices">
+      <div class="remote-room-picker"><label for="remote-room">Room<select id="remote-room" data-select-room></select></label><button type="button" class="remote-small" data-open="manageRooms" aria-label="Manage rooms"><i data-lucide="door-open" aria-hidden="true"></i></button></div>
+      <label for="remote-samsung">Samsung TV<select id="remote-samsung" data-select-samsung></select></label>
+      <label for="remote-apple">Apple TV<select id="remote-apple" data-select-apple></select></label>
+    </div>
+    <nav class="remote-targets" aria-label="Control device">
+      <button type="button" data-target="apple" aria-pressed="true"><i data-lucide="tv" aria-hidden="true"></i> Apple TV</button>
+      <button type="button" data-target="samsung" aria-pressed="false"><i data-lucide="monitor" aria-hidden="true"></i> Samsung</button>
+    </nav>
+    <div class="remote-connection"><span class="remote-dot"></span><span data-connection>Ready to control</span><button type="button" data-open="pairing">Pair devices</button></div>
+    <main class="remote-main">
+      <section data-screen="control">
+        <div class="remote-control-label"><span data-control-label>Apple TV navigation</span><button type="button" class="remote-small" data-toggle-pad aria-label="Switch to touchpad"><i data-lucide="hand" aria-hidden="true"></i></button></div>
+        <div class="remote-dpad" aria-label="Directional controls">
+          <button type="button" class="remote-direction remote-up" data-command="Up" aria-label="Up"><i data-lucide="chevron-up" aria-hidden="true"></i></button>
+          <button type="button" class="remote-direction remote-left" data-command="Left" aria-label="Left"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+          <button type="button" class="remote-select" data-command="Select">OK</button>
+          <button type="button" class="remote-direction remote-right" data-command="Right" aria-label="Right"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+          <button type="button" class="remote-direction remote-down" data-command="Down" aria-label="Down"><i data-lucide="chevron-down" aria-hidden="true"></i></button>
+        </div>
+        <button type="button" class="remote-touchpad" hidden aria-label="Touchpad. Swipe to navigate or tap to select."><i data-lucide="move" aria-hidden="true"></i><span>Swipe to move · Tap to select</span></button>
+        <div class="remote-actions">
+          <button type="button" data-command="Back"><i data-lucide="chevron-left" aria-hidden="true"></i><span>Back</span></button>
+          <button type="button" data-command="Home"><i data-lucide="house" aria-hidden="true"></i><span>Home</span></button>
+          <button type="button" data-command="Play / pause"><i data-lucide="play" aria-hidden="true"></i><span>Play / pause</span></button>
+        </div>
+        <section class="remote-volume" aria-label="Samsung volume">
+          <div class="remote-section-label"><span>TV volume</span><span data-volume-status>Samsung S95BD</span></div>
+          <div class="remote-volume-buttons">
+            <button type="button" data-volume="Volume down" aria-label="Samsung volume down"><i data-lucide="minus" aria-hidden="true"></i></button>
+            <button type="button" data-volume="Mute" aria-label="Toggle Samsung mute"><i data-lucide="volume-2" aria-hidden="true"></i><span>Mute</span></button>
+            <button type="button" data-volume="Volume up" aria-label="Samsung volume up"><i data-lucide="plus" aria-hidden="true"></i></button>
+          </div>
+        </section>
+        <div class="remote-tools">
+          <button type="button" data-open="keyboard"><i data-lucide="keyboard" aria-hidden="true"></i><span>Keyboard</span></button>
+          <button type="button" data-open="apps"><i data-lucide="layout-grid" aria-hidden="true"></i><span data-apps-label>Apps</span></button>
+          <button type="button" data-open="power"><i data-lucide="power" aria-hidden="true"></i><span>Power</span></button>
+        </div>
+      </section>
+      <section data-screen="offline" hidden class="remote-offline">
+        <i data-lucide="wifi-off" aria-hidden="true"></i><h3>Connection lost</h3><p>Connect to your home Wi-Fi to use this remote.</p><button type="button" class="remote-primary" data-reconnect>Reconnect</button><button type="button" class="remote-link" data-open="devices">Check devices</button>
+      </section>
+      <section data-screen="pairing" hidden class="remote-pairing">
+        <div class="remote-step">SETUP <span data-step>1 OF 2</span></div>
+        <div data-pair="apple"><i data-lucide="tv" aria-hidden="true"></i><h3>Pair your Apple TV</h3><p><span data-pair-apple-name>Living Room Apple TV</span><br>Enter the four-digit code shown on this TV.</p><form class="remote-pin-form"><label for="remote-pin">Pairing code</label><input id="remote-pin" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="0000" aria-describedby="remote-pair-error"><div id="remote-pair-error" role="alert"></div><button type="button" class="remote-primary" data-pair-apple>Pair Apple TV</button></form></div>
+        <div data-pair="samsung" hidden><i data-lucide="monitor" aria-hidden="true"></i><h3>Allow access on your Samsung</h3><p><span data-pair-samsung-name>Samsung S95BD</span><br>Choose Allow when “Room Remote” appears on this TV.</p><div class="remote-waiting">Waiting for your TV…</div><button type="button" class="remote-primary" data-allow>Preview approval</button></div>
+        <div data-pair="done" hidden><i data-lucide="circle-check" aria-hidden="true"></i><h3>Selected devices are paired</h3><p data-pair-summary>Apple TV for navigation.<br>Samsung for sound and TV controls.</p><button type="button" class="remote-primary" data-finish>Open remote</button></div>
+        <button type="button" class="remote-link" data-cancel-pair>Back to remote</button>
+      </section>
+    </main>
+    <div class="remote-feedback" role="status" aria-live="polite">Preview · Ready</div>
+    <div class="remote-home-indicator" aria-hidden="true"></div>
+    <div class="remote-backdrop" hidden aria-hidden="true"></div>
+    <section class="remote-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="remote-sheet-title">
+      <div class="remote-sheet-heading"><h3 id="remote-sheet-title" data-sheet-title>Devices</h3><button type="button" class="remote-icon" data-close aria-label="Close options"><i data-lucide="x" aria-hidden="true"></i></button></div>
+      <div data-sheet="devices"><div data-device-list></div><button type="button" class="remote-primary" data-open="pairing">Pair selected devices</button><button type="button" class="remote-link" data-partial>Preview selected Samsung unavailable</button><button type="button" class="remote-link" data-keyboard-focus>Preview no text field</button><button type="button" class="remote-link" data-simulate-offline>Preview lost Wi-Fi</button></div>
+      <div data-sheet="manageRooms" hidden><label for="remote-assignment-room">Save selected devices to<select id="remote-assignment-room" data-assignment-room></select></label><div class="remote-room-assignment"><span>Samsung TV</span><strong data-assignment-samsung></strong><span>Apple TV</span><strong data-assignment-apple></strong></div><button type="button" class="remote-primary" data-save-room>Save room assignment</button><button type="button" class="remote-link" data-restore-room>Use saved room devices</button></div>
+      <div data-sheet="keyboard" hidden><div data-keyboard-editor><label for="remote-text">Type on Apple TV</label><textarea id="remote-text" rows="3" placeholder="Search for a show…"></textarea><button type="button" class="remote-primary" data-send-text>Send text</button></div><div data-keyboard-unavailable hidden><p>Open a search or text field on Apple TV to use the keyboard.</p></div></div>
+      <div data-sheet="apps" hidden><p>Preview app list</p><div class="remote-app-list"><button type="button" data-app="TV">TV</button><button type="button" data-app="YouTube">YouTube</button><button type="button" data-app="Netflix">Netflix</button></div></div>
+      <div data-sheet="inputs" hidden><p>Preview shortcuts · Requires TV support</p><div class="remote-app-list"><button type="button" data-input="Apple TV HDMI input">Apple TV</button><button type="button" data-input="Samsung TV home">TV home</button></div></div>
+      <div data-sheet="power" hidden><button type="button" class="remote-power-action" data-power="Wake Apple TV"><i data-lucide="tv" aria-hidden="true"></i> Wake Apple TV</button><button type="button" class="remote-power-action" data-power="Sleep Apple TV"><i data-lucide="moon" aria-hidden="true"></i> Sleep Apple TV</button><button type="button" class="remote-power-action remote-danger" data-power="Turn Samsung off"><i data-lucide="power" aria-hidden="true"></i> Turn Samsung off</button></div>
+    </section>
+  </div>
+</div>
+<style>
+#tv-remote-design{--remote-bg:light-dark(#f4f5f7,#151619);--remote-panel:light-dark(#ffffff,#23252b);--remote-text:light-dark(#15181f,#f2f3f7);--remote-muted:light-dark(#5f6571,#afb3bf);--remote-line:light-dark(#dfe2e9,#353841);--remote-accent:light-dark(#2058ce,#83aaff);--remote-accent-surface:light-dark(#e6edfd,#26324c);--remote-danger:light-dark(#b52b36,#ff949c);--remote-shadow:light-dark(#00000014,#00000050);--remote-radius:24px;color:var(--remote-text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;justify-content:center;padding:12px 0}
+#tv-remote-design *{box-sizing:border-box}
+#tv-remote-design [hidden]{display:none!important}
+#tv-remote-design .remote-phone{width:min(100%,390px);position:relative;background:var(--remote-bg);border:1px solid var(--remote-line);border-radius:36px;box-shadow:0 12px 32px var(--remote-shadow);padding:22px 24px 12px;overflow:hidden}
+#tv-remote-design button,#tv-remote-design input,#tv-remote-design textarea,#tv-remote-design select{font:inherit;color:inherit}
+#tv-remote-design button{cursor:pointer;border:0;background:transparent;touch-action:manipulation}
+#tv-remote-design button:active{transform:scale(.97)}
+#tv-remote-design button:disabled{opacity:.45;cursor:default;transform:none}
+#tv-remote-design svg{flex-shrink:0}
+#tv-remote-design h2{font-size:28px;font-weight:600;line-height:1.2;letter-spacing:-.8px;margin:3px 0 0}
+#tv-remote-design h3{font-size:22px;font-weight:600;letter-spacing:-.4px;margin:16px 0 10px}
+#tv-remote-design p{color:var(--remote-muted);font-size:15px;line-height:1.5;margin:8px 0 24px}
+#tv-remote-design .remote-preview{font-size:11px;letter-spacing:1px;color:var(--remote-muted);text-align:center;margin-bottom:22px}
+#tv-remote-design .remote-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:12px}
+#tv-remote-design .remote-eyebrow{font-size:11px;letter-spacing:1.7px;font-weight:600;color:var(--remote-muted)}
+#tv-remote-design .remote-header>div{min-width:0}
+#tv-remote-design [data-room-title]{overflow-wrap:anywhere}
+#tv-remote-design .remote-pickers{display:grid;gap:12px;margin-bottom:20px}
+#tv-remote-design .remote-pickers label,#tv-remote-design [data-sheet="manageRooms"] label{display:block;font-size:12px;color:var(--remote-muted);min-width:0}
+#tv-remote-design select{display:block;width:100%;min-width:0;min-height:46px;margin-top:6px;border:1px solid var(--remote-line);border-radius:13px;background:var(--remote-panel);font-size:16px;color:var(--remote-text);padding:10px 12px}
+#tv-remote-design .remote-room-picker{display:flex;align-items:flex-end;gap:8px}
+#tv-remote-design .remote-room-picker label{flex:1}
+#tv-remote-design .remote-room-picker button{flex-shrink:0;background:var(--remote-panel);border-radius:13px}
+#tv-remote-design .remote-room-assignment{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;margin:24px 0;font-size:14px;overflow-wrap:anywhere}
+#tv-remote-design .remote-room-assignment span{font-size:12px;color:var(--remote-muted)}
+#tv-remote-design .remote-room-assignment strong{font-weight:500;margin-bottom:12px}
+#tv-remote-design .remote-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--remote-panel)}
+#tv-remote-design .remote-targets{display:flex;background:var(--remote-panel);padding:5px;border-radius:18px;gap:4px}
+#tv-remote-design .remote-targets button{display:flex;justify-content:center;align-items:center;gap:8px;min-height:44px;flex:1;border-radius:13px;font-size:14px;font-weight:500}
+#tv-remote-design .remote-targets button[aria-pressed="true"]{background:var(--remote-accent-surface);color:var(--remote-accent)}
+#tv-remote-design .remote-targets svg{width:18px;height:18px}
+#tv-remote-design .remote-connection{display:flex;align-items:center;gap:6px;color:var(--remote-muted);font-size:12px;margin:7px 0 18px;min-height:44px;flex-wrap:wrap}
+#tv-remote-design .remote-dot{width:6px;height:6px;border-radius:50%;background:var(--remote-accent)}
+#tv-remote-design .remote-connection button{margin-left:auto;color:var(--remote-accent);font-size:12px;min-height:44px}
+#tv-remote-design .remote-control-label{display:flex;align-items:center;justify-content:space-between;color:var(--remote-muted);font-size:13px;margin-bottom:10px}
+#tv-remote-design .remote-small{width:44px;height:44px;display:grid;place-items:center}
+#tv-remote-design .remote-small svg{width:18px;height:18px}
+#tv-remote-design .remote-dpad{width:258px;max-width:100%;aspect-ratio:1;margin:0 auto 24px;position:relative;border-radius:50%;background:var(--remote-panel);border:1px solid var(--remote-line)}
+#tv-remote-design .remote-direction{position:absolute;display:grid;place-items:center;width:68px;height:68px;border-radius:22px}
+#tv-remote-design .remote-direction svg{width:28px;height:28px}
+#tv-remote-design .remote-up{top:6px;left:calc(50% - 34px)}
+#tv-remote-design .remote-down{bottom:6px;left:calc(50% - 34px)}
+#tv-remote-design .remote-left{left:6px;top:calc(50% - 34px)}
+#tv-remote-design .remote-right{right:6px;top:calc(50% - 34px)}
+#tv-remote-design .remote-select{width:84px;height:84px;position:absolute;left:calc(50% - 42px);top:calc(50% - 42px);border-radius:50%;background:var(--remote-accent-surface);color:var(--remote-accent);font-size:18px;font-weight:600}
+#tv-remote-design .remote-touchpad{height:258px;width:100%;border:1px solid var(--remote-line);border-radius:var(--remote-radius);background:var(--remote-panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:60px;margin-bottom:24px;touch-action:none;color:var(--remote-muted);font-size:13px}
+#tv-remote-design .remote-touchpad svg{width:32px;height:32px;color:var(--remote-accent)}
+#tv-remote-design .remote-actions{display:flex;gap:10px;margin-bottom:26px}
+#tv-remote-design .remote-actions button{flex:1;min-height:78px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:var(--remote-panel);border-radius:18px;font-size:12px}
+#tv-remote-design .remote-actions svg{width:23px;height:23px}
+#tv-remote-design .remote-section-label{display:flex;justify-content:space-between;gap:8px;margin-bottom:12px;font-size:13px}
+#tv-remote-design .remote-section-label span:last-child{color:var(--remote-muted);font-size:12px}
+#tv-remote-design .remote-volume-buttons{display:flex;gap:8px}
+#tv-remote-design .remote-volume-buttons button{min-height:60px;flex:1;border-radius:16px;background:var(--remote-panel);display:flex;justify-content:center;align-items:center;gap:8px;font-size:13px}
+#tv-remote-design .remote-volume-buttons button[aria-pressed="true"]{background:var(--remote-accent-surface);color:var(--remote-accent)}
+#tv-remote-design .remote-volume-buttons svg{width:22px;height:22px}
+#tv-remote-design .remote-tools{display:flex;justify-content:space-between;margin-top:26px;gap:12px}
+#tv-remote-design .remote-tools button{min-height:58px;display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:7px;color:var(--remote-muted);font-size:12px}
+#tv-remote-design .remote-tools svg{width:21px;height:21px}
+#tv-remote-design .remote-feedback{margin-top:15px;text-align:center;color:var(--remote-muted);font-size:11px;min-height:32px;line-height:1.5;overflow-wrap:anywhere}
+#tv-remote-design .remote-home-indicator{width:110px;height:4px;margin:6px auto 0;background:var(--remote-text);border-radius:4px;opacity:.6}
+#tv-remote-design .remote-main{min-height:515px}
+#tv-remote-design .remote-primary{width:100%;min-height:50px;background:var(--remote-accent-surface);color:var(--remote-accent);font-weight:500;border-radius:16px;margin-top:16px}
+#tv-remote-design .remote-link{color:var(--remote-accent);min-height:48px;display:block;margin:8px auto;font-size:14px}
+#tv-remote-design .remote-offline,#tv-remote-design .remote-pairing{text-align:center;padding:36px 4px}
+#tv-remote-design .remote-offline>svg,#tv-remote-design [data-pair]>svg{width:42px;height:42px;color:var(--remote-accent);margin:24px auto 12px}
+#tv-remote-design .remote-step{display:flex;justify-content:space-between;color:var(--remote-muted);font-size:11px;letter-spacing:1px;margin-bottom:20px}
+#tv-remote-design .remote-pin-form label,#tv-remote-design [data-sheet="keyboard"] label{display:block;color:var(--remote-muted);font-size:13px;margin:16px 0 10px;text-align:left}
+#tv-remote-design input,#tv-remote-design textarea{font-size:16px;border:1px solid var(--remote-line);border-radius:14px;background:var(--remote-bg);padding:14px;width:100%;outline-offset:2px}
+#tv-remote-design #remote-pin{text-align:center;font-size:30px;letter-spacing:14px;padding-left:28px}
+#tv-remote-design #remote-pair-error{color:var(--remote-danger);font-size:12px;min-height:20px;margin-top:8px}
+#tv-remote-design .remote-waiting{padding:18px;background:var(--remote-panel);border-radius:14px;color:var(--remote-muted);font-size:13px}
+#tv-remote-design .remote-backdrop{position:absolute;inset:0;background:var(--remote-shadow);z-index:2}
+#tv-remote-design .remote-sheet{position:absolute;left:0;right:0;bottom:0;padding:22px 24px 30px;background:var(--remote-panel);border-radius:30px 30px 0 0;z-index:3}
+#tv-remote-design .remote-sheet-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+#tv-remote-design .remote-sheet-heading h3{margin:0}
+#tv-remote-design .remote-sheet-heading .remote-icon{background:var(--remote-bg)}
+#tv-remote-design .remote-device-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--remote-line);font-size:13px}
+#tv-remote-design .remote-device-row>svg{width:22px;height:22px;color:var(--remote-accent)}
+#tv-remote-design .remote-device-row div{flex:1;min-width:0;overflow-wrap:anywhere}
+#tv-remote-design .remote-device-row strong{font-weight:500;display:block;margin-bottom:5px}
+#tv-remote-design .remote-device-row div span{color:var(--remote-muted);display:block;font-size:11px}
+#tv-remote-design .remote-device-row>span{color:var(--remote-accent);font-size:12px}
+#tv-remote-design .remote-app-list{display:flex;flex-wrap:wrap;gap:12px}
+#tv-remote-design .remote-app-list button{flex:1;min-width:76px;min-height:75px;background:var(--remote-bg);border-radius:18px;font-size:14px}
+#tv-remote-design .remote-power-action{width:100%;display:flex;align-items:center;gap:14px;min-height:60px;border-bottom:1px solid var(--remote-line);font-size:14px;text-align:left}
+#tv-remote-design .remote-danger{color:var(--remote-danger)}
+@media(max-width:350px){#tv-remote-design .remote-phone{padding-left:18px;padding-right:18px}#tv-remote-design .remote-dpad{width:246px}#tv-remote-design .remote-preview{letter-spacing:.5px}#tv-remote-design .remote-targets button{gap:5px}}
+@media(prefers-reduced-motion:reduce){#tv-remote-design button:active{transform:none}}
+</style>
+<script>
+(() => {
+  const root = document.getElementById('tv-remote-design');
+  const devices = [
+    {id:'s-living',kind:'samsung',name:'Samsung S95BD',room:'Living Room',model:'Unverified model · Phone display name',available:true},
+    {id:'s-bedroom',kind:'samsung',name:'Bedroom Samsung',room:'Bedroom',model:'Unverified model',available:true},
+    {id:'s-office',kind:'samsung',name:'Office Samsung',room:'Office',model:'Unverified model',available:false},
+    {id:'a-living',kind:'apple',name:'Living Room Apple TV',room:'Living Room',model:'Apple TV 4K',available:true,keyboardFocus:true},
+    {id:'a-bedroom',kind:'apple',name:'Bedroom Apple TV',room:'Bedroom',model:'Apple TV 4K',available:true,keyboardFocus:true},
+    {id:'a-office',kind:'apple',name:'Office Apple TV',room:'Office',model:'Apple TV 4K',available:true,keyboardFocus:false}
+  ];
+  const rooms = [
+    {id:'living',name:'Living Room',samsungId:'s-living',appleId:'a-living'},
+    {id:'bedroom',name:'Bedroom',samsungId:'s-bedroom',appleId:'a-bedroom'},
+    {id:'office',name:'Office',samsungId:'s-office',appleId:''}
+  ];
+  const state = { roomId:'living', samsungId:'s-living', appleId:'a-living', target:'apple', screen:'control', pad:'D-pad', corners:24, step:'apple', sheet:null };
+  const all = selector => [...root.querySelectorAll(selector)];
+  const one = selector => root.querySelector(selector);
+  let previousSheet = null;
+  let sheetOpener = null;
+  let start = null;
+  let selectionGeneration = 0;
+  const device = kind => devices.find(item => item.id === state[`${kind}Id`]);
+  const room = () => rooms.find(item => item.id === state.roomId);
+  const isCustom = () => room().samsungId !== state.samsungId || room().appleId !== state.appleId;
+  const isReady = kind => !!device(kind)?.available && state.screen === 'control';
+  const deviceLabel = kind => device(kind) ? `${device(kind).name} (${device(kind).room})` : `No ${kind === 'apple' ? 'Apple TV' : 'Samsung TV'} selected`;
+  const feedback = text => { one('.remote-feedback').textContent = `Preview · ${text}`; };
+  function options(select, values, noneLabel) {
+    select.replaceChildren();
+    if(noneLabel) select.add(new Option(noneLabel,''));
+    values.forEach(item => select.add(new Option(item.name,item.id)));
+  }
+  options(one('[data-select-room]'),rooms);
+  options(one('[data-assignment-room]'),rooms);
+  options(one('[data-select-samsung]'),devices.filter(item => item.kind === 'samsung'),'None');
+  options(one('[data-select-apple]'),devices.filter(item => item.kind === 'apple'),'None');
+  devices.forEach(item => {
+    const row = document.createElement('div'); row.className='remote-device-row'; row.dataset.deviceId=item.id;
+    const icon = document.createElement('i'); icon.dataset.lucide=item.kind === 'apple' ? 'tv' : 'monitor'; icon.setAttribute('aria-hidden','true');
+    const details = document.createElement('div');
+    const name = document.createElement('strong'); name.textContent=item.name;
+    const description = document.createElement('span'); description.textContent=`${item.room} · ${item.model} · Preview`;
+    const status = document.createElement('span'); status.dataset.deviceStatus=item.id;
+    details.append(name,description); row.append(icon,details,status); one('[data-device-list]').append(row);
+  });
+  function resetInteraction() {
+    start=null;selectionGeneration++;state.sheet=null;
+    if(state.screen==='pairing') state.screen='control';
+    one('#remote-pin').value='';one('#remote-pair-error').textContent='';one('#remote-text').value='';
+  }
+  function selectRoom(id) {
+    resetInteraction();state.roomId=id;state.samsungId=room().samsungId;state.appleId=room().appleId;
+    feedback(`${room().name} · Saved devices selected`);
+  }
+  function command(kind,text) {
+    if(!isReady(kind)) {feedback(`${deviceLabel(kind)} · Unavailable`);return;}
+    feedback(`${deviceLabel(kind)}: ${text}`);
+  }
+  function beginPairing() {
+    resetInteraction();state.screen='pairing';state.step=device('apple')?'apple':'samsung';
+    feedback(`Pairing ${device('apple')?.name || device('samsung')?.name || 'selected devices'}`);
+  }
+  function pairApple() {
+    if(!/^\d{4}$/.test(one('#remote-pin').value)){one('#remote-pair-error').textContent='Enter a four-digit code.';return;}
+    if(!device('apple')) return;
+    device('apple').available=true;
+    one('#remote-pin').value='';one('#remote-pair-error').textContent='';state.step=device('samsung')?'samsung':'done';feedback(`${deviceLabel('apple')} · Pairing simulated`);render();
+  }
+  function render() {
+    root.style.setProperty('--remote-radius', `${state.corners}px`);
+    one('[data-room-title]').textContent=`${room().name}${isCustom()?' · Custom':''}`;
+    one('[data-select-room]').value=state.roomId;
+    one('[data-select-samsung]').value=state.samsungId;
+    one('[data-select-apple]').value=state.appleId;
+    all('[data-target]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.target === state.target)));
+    all('[data-screen]').forEach(panel => panel.hidden = panel.dataset.screen !== state.screen);
+    one('[data-control-label]').textContent = device(state.target)?.name || deviceLabel(state.target);
+    const selected=device(state.target);
+    one('[data-connection]').textContent = state.screen === 'offline' ? 'Wi-Fi disconnected' : state.screen === 'pairing' ? 'Pair selected devices' : !selected ? deviceLabel(state.target) : selected.available ? 'Selected device ready' : `${selected.name} offline`;
+    one('.remote-dot').style.opacity = state.screen === 'offline' ? '.3' : '1';
+    one('.remote-dpad').hidden = state.pad !== 'D-pad';
+    one('.remote-touchpad').hidden = state.pad !== 'Touchpad';
+    all('[data-command],.remote-touchpad').forEach(button=>button.disabled=!isReady(state.target));
+    one('[data-toggle-pad]').setAttribute('aria-label', `Switch to ${state.pad === 'D-pad' ? 'touchpad' : 'directional buttons'}`);
+    one('[data-apps-label]').textContent = state.target === 'apple' ? 'Apps' : 'Inputs';
+    one('[data-open="keyboard"]').disabled = state.target !== 'apple' || !isReady('apple');
+    one('[data-open="apps"]').disabled = !isReady(state.target);
+    all('[data-volume]').forEach(button => button.disabled = !isReady('samsung'));
+    one('[data-volume-status]').textContent = device('samsung') ? `${device('samsung').name}${device('samsung').available?'':' · Offline'}` : 'No Samsung TV';
+    all('[data-device-status]').forEach(element=>element.textContent=devices.find(item=>item.id===element.dataset.deviceStatus).available?'Paired':'Offline');
+    one('[data-partial]').disabled = !device('samsung');
+    one('[data-partial]').textContent = device('samsung')?.available ? 'Preview selected Samsung unavailable' : 'Restore selected Samsung preview';
+    one('[data-keyboard-focus]').disabled = !device('apple');
+    one('[data-keyboard-focus]').textContent = device('apple')?.keyboardFocus ? 'Preview no text field' : 'Preview active text field';
+    one('[data-keyboard-editor]').hidden = !device('apple')?.keyboardFocus;
+    one('[data-keyboard-unavailable]').hidden = !!device('apple')?.keyboardFocus;
+    all('[data-power]').forEach(button=>button.disabled=!isReady(button.dataset.power.includes('Samsung')?'samsung':'apple'));
+    all('[data-open="pairing"]').forEach(button=>button.disabled=!device('apple')&&!device('samsung'));
+    all('[data-pair]').forEach(panel => panel.hidden = panel.dataset.pair !== state.step);
+    const count=Number(!!device('apple'))+Number(!!device('samsung'));
+    one('[data-step]').textContent = state.step === 'done' ? 'COMPLETE' : `${state.step === 'samsung' && device('apple')?'2':'1'} OF ${count}`;
+    one('[data-pair-apple-name]').textContent=device('apple')?.name||'No Apple TV selected';
+    one('[data-pair-samsung-name]').textContent=device('samsung')?.name||'No Samsung selected';
+    one('[data-pair-summary]').textContent=[device('apple')?.name,device('samsung')?.name].filter(Boolean).join(' + ');
+    one('[data-assignment-samsung]').textContent=device('samsung')?.name||'None';
+    one('[data-assignment-apple]').textContent=device('apple')?.name||'None';
+    one('.remote-sheet').hidden = !state.sheet;
+    one('.remote-backdrop').hidden = !state.sheet;
+    all('.remote-header,.remote-pickers,.remote-targets,.remote-main,.remote-connection').forEach(element => element.inert = !!state.sheet);
+    all('[data-sheet]').forEach(panel => panel.hidden = panel.dataset.sheet !== state.sheet);
+    const titles = {devices:'Your devices',manageRooms:'Room assignments',keyboard:'Keyboard',apps:'Apple TV apps',inputs:'Samsung inputs',power:'Power'};
+    if (state.sheet) one('[data-sheet-title]').textContent = titles[state.sheet];
+    if (state.sheet && state.sheet !== previousSheet) one('[data-close]').focus();
+    if (!state.sheet && previousSheet && sheetOpener && sheetOpener.getClientRects().length) sheetOpener.focus();
+    previousSheet = state.sheet;
+  }
+  root.addEventListener('click', event => {
+    const button = event.target.closest('button');
+    if (!button || button.disabled) return;
+    if (button.dataset.target) {resetInteraction();state.target=button.dataset.target;feedback(`${deviceLabel(state.target)} selected`);}
+    if (button.hasAttribute('data-toggle-pad')) state.pad = state.pad === 'D-pad' ? 'Touchpad' : 'D-pad';
+    if (button.dataset.command) command(state.target,button.dataset.command);
+    if (button.dataset.volume) command('samsung',button.dataset.volume === 'Mute' ? 'Toggle mute' : button.dataset.volume);
+    if (button.dataset.open) {start=null;selectionGeneration++;if (button.dataset.open === 'pairing') beginPairing(); else {sheetOpener=button;state.sheet = button.dataset.open === 'apps' && state.target === 'samsung' ? 'inputs' : button.dataset.open;if(state.sheet==='manageRooms')one('[data-assignment-room]').value=state.roomId;} }
+    if (button.hasAttribute('data-close')) state.sheet = null;
+    if (button.hasAttribute('data-save-room')) {const assigned=rooms.find(item=>item.id===one('[data-assignment-room]').value);assigned.samsungId=state.samsungId;assigned.appleId=state.appleId;state.roomId=assigned.id;state.sheet=null;feedback(`${assigned.name} · Room assignment saved`);}
+    if (button.hasAttribute('data-restore-room')) selectRoom(state.roomId);
+    if (button.hasAttribute('data-simulate-offline')) {resetInteraction();state.screen='offline';feedback('Connection lost');}
+    if (button.hasAttribute('data-partial') && device('samsung')) {device('samsung').available=!device('samsung').available;state.sheet=null;feedback(`${deviceLabel('samsung')} · ${device('samsung').available?'Restored':'Offline'}`);}
+    if (button.hasAttribute('data-keyboard-focus') && device('apple')) {device('apple').keyboardFocus=!device('apple').keyboardFocus;state.target='apple';state.sheet='keyboard';}
+    if (button.hasAttribute('data-reconnect')) {state.screen='control';feedback('Reconnected');}
+    if (button.hasAttribute('data-cancel-pair')) {resetInteraction();feedback('Setup closed');}
+    if (button.hasAttribute('data-allow') && device('samsung')) {device('samsung').available=true;state.step='done';feedback(`${deviceLabel('samsung')} · Approval simulated`);}
+    if (button.hasAttribute('data-pair-apple')) pairApple();
+    if (button.hasAttribute('data-finish')) {state.screen='control';feedback('Selected-device pairing complete');}
+    if (button.hasAttribute('data-send-text')) {if(one('#remote-text').value.trim()){if(device('apple')?.keyboardFocus)command('apple','Text entry simulated');state.sheet=null;one('#remote-text').value='';}else feedback('Enter text first');}
+    if (button.dataset.app) {command('apple',`Open ${button.dataset.app}`);state.sheet=null;}
+    if (button.dataset.input) {command('samsung',button.dataset.input);state.sheet=null;}
+    if (button.dataset.power) {command(button.dataset.power.includes('Samsung')?'samsung':'apple',`${button.dataset.power} simulated`);state.sheet=null;}
+    render();
+  });
+  root.addEventListener('change', event => {
+    if(event.target.hasAttribute('data-select-room')) selectRoom(event.target.value);
+    if(event.target.hasAttribute('data-select-samsung') || event.target.hasAttribute('data-select-apple')) {
+      const kind=event.target.hasAttribute('data-select-samsung')?'samsung':'apple';
+      resetInteraction();state[`${kind}Id`]=event.target.value;feedback(`${deviceLabel(kind)} selected · ${isCustom()?'Custom pair':'Saved pair'}`);
+    }
+    render();
+  });
+  one('.remote-pin-form').addEventListener('submit', event => {event.preventDefault();pairApple();});
+  one('#remote-pin').addEventListener('keydown', event => {if(event.key==='Enter'){event.preventDefault();pairApple();}});
+  one('.remote-touchpad').addEventListener('pointerdown', event => {if(!isReady(state.target))return;start={x:event.clientX,y:event.clientY,generation:selectionGeneration};event.currentTarget.setPointerCapture(event.pointerId);});
+  one('.remote-touchpad').addEventListener('pointerup', event => {if(!start||start.generation!==selectionGeneration)return;const dx=event.clientX-start.x,dy=event.clientY-start.y;const action=Math.max(Math.abs(dx),Math.abs(dy))<20?'Select':Math.abs(dx)>Math.abs(dy)?dx>0?'Right':'Left':dy>0?'Down':'Up';command(state.target,action);start=null;});
+  one('.remote-touchpad').addEventListener('pointercancel', () => {start=null;});
+  one('.remote-touchpad').addEventListener('keydown', event => {if(event.key==='Enter'||event.key===' '){event.preventDefault();command(state.target,'Select');}});
+  root.addEventListener('keydown', event => {
+    if(event.key==='Escape'){state.sheet=null;render();}
+    if(event.key==='Tab'&&state.sheet){const controls=[...one('.remote-sheet').querySelectorAll('button,input,textarea,select')].filter(element=>element.getClientRects().length&&!element.disabled);const first=controls[0],last=controls[controls.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}
+  });
+  render();
+  if(globalThis.lucide)lucide.createIcons({attrs:{width:16,height:16}});
+  if (globalThis.Tweak) {
+    const tweak = new Tweak({container:one('.remote-phone'),onChange:()=>{start=null;selectionGeneration++;state.sheet=null;render();}});
+    tweak.addSelect(state,'pad',{label:'Navigation',options:['D-pad','Touchpad']});
+    tweak.addSelect(state,'screen',{label:'Screen',options:[{label:'Remote',value:'control'},{label:'Pairing',value:'pairing'},{label:'Connection lost',value:'offline'}]});
+    tweak.addSlider(state,'corners',{label:'Touchpad corners',min:12,max:36,step:2,unit:'px'});
+  }
+})();
+</script>

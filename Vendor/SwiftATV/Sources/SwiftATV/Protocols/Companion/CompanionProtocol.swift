@@ -1,0 +1,526 @@
+import Foundation
+
+/// Message types in the Companion protocol.
+public enum CompanionMessageType: Int, Sendable {
+    case event = 1
+    case request = 2
+    case response = 3
+}
+
+/// HID button commands for the Companion protocol.
+public enum HIDCommand: Int, Sendable {
+    case up = 1
+    case down = 2
+    case left = 3
+    case right = 4
+    case menu = 5
+    case select = 6
+    case home = 7
+    case volumeUp = 8
+    case volumeDown = 9
+    case siri = 10
+    case screensaver = 11
+    case sleep = 12
+    case wake = 13
+    case playPause = 14
+    case channelIncrement = 15
+    case channelDecrement = 16
+    case guide = 17
+    case pageUp = 18
+    case pageDown = 19
+}
+
+/// Media control commands sent via the Companion protocol.
+public enum MediaControlCommand: Int, Sendable {
+    case play = 1
+    case pause = 2
+    case nextTrack = 3
+    case previousTrack = 4
+    case getVolume = 5
+    case setVolume = 6
+    case skipBy = 7
+    case fastForwardBegin = 8
+    case fastForwardEnd = 9
+    case rewindBegin = 10
+    case rewindEnd = 11
+}
+
+/// System status values from the Companion protocol.
+public enum CompanionSystemStatus: Int, Sendable {
+    case asleep = 1
+    case screensaver = 2
+    case awake = 3
+    case idle = 4
+}
+
+/// Default timeout for Companion protocol requests.
+public let defaultCompanionTimeout: TimeInterval = 5.0
+
+private final class PendingCompanionRequest: @unchecked Sendable {
+    let id: UUID
+    let identifier: String
+    let timeout: TimeInterval
+    let continuation: CheckedContinuation<OPACK.Value, Error>
+    var timeoutTask: Task<Void, Never>?
+
+    init(
+        id: UUID = UUID(),
+        identifier: String,
+        timeout: TimeInterval,
+        continuation: CheckedContinuation<OPACK.Value, Error>
+    ) {
+        self.id = id
+        self.identifier = identifier
+        self.timeout = timeout
+        self.continuation = continuation
+    }
+}
+
+/// High-level Companion protocol handler.
+///
+/// Manages OPACK message exchange over the CompanionConnection,
+/// including request/response correlation via XID, event dispatching,
+/// and the full connection lifecycle (pair-verify, system info, sessions).
+public actor CompanionProtocolHandler {
+    private let connection: CompanionConnection
+    private let defaultRequestTimeout: TimeInterval
+    private var xid: Int
+    private var pendingRequests: [Int: PendingCompanionRequest] = [:]
+    private var eventContinuation: AsyncStream<(String, OPACK.Value)>.Continuation?
+    private var _eventStream: AsyncStream<(String, OPACK.Value)>?
+    private var pendingEvents: [(String, OPACK.Value)] = []
+    private var sessionID: UInt64 = 0
+    private var isRunning = false
+    private var receiveTask: Task<Void, Never>?
+
+    /// Stream of events received from the device.
+    public var eventStream: AsyncStream<(String, OPACK.Value)> {
+        if let existing = _eventStream { return existing }
+        let stream = AsyncStream<(String, OPACK.Value)>(bufferingPolicy: .bufferingOldest(64)) { continuation in
+            self.eventContinuation = continuation
+            let events = self.pendingEvents
+            self.pendingEvents.removeAll()
+            for event in events {
+                continuation.yield(event)
+            }
+        }
+        _eventStream = stream
+        return stream
+    }
+
+    public init(
+        connection: CompanionConnection,
+        defaultRequestTimeout: TimeInterval = defaultCompanionTimeout
+    ) {
+        self.connection = connection
+        self.defaultRequestTimeout = defaultRequestTimeout
+        self.xid = Int.random(in: 0..<65536)
+    }
+
+    /// Start processing incoming OPACK frames.
+    ///
+    /// When the underlying frame stream ends — which `CompanionConnection`
+    /// guarantees on both explicit `close()` and NIO peer-close paths —
+    /// the receive loop drains any pending OPACK requests and resumes
+    /// each one with `.connectionLost`. Without this, a `sendRequest`
+    /// caller waiting for a response when the connection drops would
+    /// hang until its 5-second timeout fired and then surface
+    /// `.operationTimeout` instead of the real failure cause.
+    public func startReceiving() {
+        guard !isRunning else { return }
+        isRunning = true
+
+        receiveTask = Task { [weak self] in
+            guard let self else { return }
+            let stream = connection.frameStream
+            for await frame in stream {
+                await self.handleFrame(frame)
+            }
+            // Stream ended → connection is closed. Drain any pending
+            // OPACK requests so callers see `.connectionLost` immediately.
+            await self.failPendingRequests(
+                reason: .connectionLost("Connection closed")
+            )
+        }
+    }
+
+    /// Stop processing.
+    public func stop() {
+        isRunning = false
+        receiveTask?.cancel()
+        receiveTask = nil
+        eventContinuation?.finish()
+        eventContinuation = nil
+        _eventStream = nil
+        pendingEvents.removeAll()
+        failPendingRequests(reason: .connectionLost("Protocol stopped"))
+    }
+
+    /// Resume every pending OPACK request continuation with the given
+    /// terminal error and clear the dictionary. Used by `stop()` and by
+    /// the receive-loop exit path when the underlying frame stream ends.
+    /// Idempotent — calling it on an empty `pendingRequests` is a no-op.
+    internal func failPendingRequests(reason: ATVError) {
+        let snapshot = pendingRequests
+        pendingRequests.removeAll()
+        for (_, request) in snapshot {
+            request.timeoutTask?.cancel()
+            request.continuation.resume(throwing: reason)
+        }
+    }
+
+    /// Test-only seam: install a continuation in `pendingRequests`
+    /// directly, bypassing `sendRequest`'s real send path. The returned
+    /// async function suspends until the continuation is resumed (which
+    /// would normally happen via `handleFrame` matching the XID, or via
+    /// `failPendingRequests` on connection close). Used by regression
+    /// tests that need to drive the drain path without a live channel.
+    internal func _testInstallPendingRequest(xid: Int) async throws(ATVError) -> OPACK.Value {
+        let requestID = UUID()
+        let timeout = defaultRequestTimeout
+        let timeoutNs = try timeoutNanoseconds(from: timeout, parameterName: "timeout")
+        let context = TimeoutContext(
+            protocol: .companion,
+            operation: "testRequest",
+            requestID: "test",
+            duration: timeout
+        )
+        do {
+            return try await waitForRequest(
+                xid: xid,
+                identifier: "test",
+                timeout: timeout,
+                timeoutNs: timeoutNs,
+                requestID: requestID,
+                cancellationContext: context
+            ) {}
+        } catch let err as ATVError {
+            throw err
+        } catch {
+            throw ATVError.wrap(error)
+        }
+    }
+
+    internal func _testPendingRequestCount() -> Int {
+        pendingRequests.count
+    }
+
+    internal func _testHandleFrame(_ frame: CompanionFrame) {
+        handleFrame(frame)
+    }
+
+    // MARK: - Sending Messages
+
+    /// Send an OPACK request and wait for the response.
+    ///
+    /// Race safety: the XID→continuation mapping is installed **before**
+    /// the send so a fast device reply cannot be silently dropped. The
+    /// old ordering (send then register) produced occasional false
+    /// timeouts when the Apple TV responded on the same event-loop tick
+    /// as the write.
+    public func sendRequest(
+        _ identifier: String,
+        content: OPACK.Value = .dict([]),
+        timeout: TimeInterval? = nil
+    ) async throws(ATVError) -> OPACK.Value {
+        let timeout = timeout ?? defaultRequestTimeout
+        let timeoutNs = try timeoutNanoseconds(from: timeout, parameterName: "timeout")
+        xid += 1
+        let currentXID = xid
+
+        let message = OPACK.Value.dict([
+            (.string("_i"), .string(identifier)),
+            (.string("_t"), .uint(UInt64(CompanionMessageType.request.rawValue))),
+            (.string("_c"), content),
+            (.string("_x"), .uint(UInt64(currentXID))),
+        ])
+        let data = OPACK.encode(message)
+
+        let requestID = UUID()
+        let context = TimeoutContext(
+            protocol: .companion,
+            operation: "request",
+            requestID: identifier,
+            duration: timeout
+        )
+
+        do {
+            return try await waitForRequest(
+                xid: currentXID,
+                identifier: identifier,
+                timeout: timeout,
+                timeoutNs: timeoutNs,
+                requestID: requestID,
+                cancellationContext: context
+            ) { [connection] in
+                try await connection.send(type: .eOPACK, payload: data)
+            }
+        } catch let err as ATVError {
+            throw err
+        } catch {
+            throw ATVError.wrap(error)
+        }
+    }
+
+    private func waitForRequest(
+        xid currentXID: Int,
+        identifier: String,
+        timeout: TimeInterval,
+        timeoutNs: UInt64,
+        requestID: UUID,
+        cancellationContext: TimeoutContext,
+        sendOperation: @escaping @Sendable () async throws -> Void
+    ) async throws -> OPACK.Value {
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation {
+                (continuation: CheckedContinuation<OPACK.Value, Error>) in
+                if Task.isCancelled {
+                    continuation.resume(throwing: ATVError.operationCancelled(cancellationContext))
+                    return
+                }
+
+                let request = PendingCompanionRequest(
+                    id: requestID,
+                    identifier: identifier,
+                    timeout: timeout,
+                    continuation: continuation
+                )
+                pendingRequests[currentXID] = request
+
+                let task = Task { [weak self] in
+                    guard let self else { return }
+                    do {
+                        try await sendOperation()
+                    } catch {
+                        if let waiter = await self.takePendingRequest(xid: currentXID, id: requestID) {
+                            waiter.timeoutTask?.cancel()
+                            waiter.continuation.resume(throwing: error)
+                        }
+                        return
+                    }
+                    do {
+                        try await Task.sleep(nanoseconds: timeoutNs)
+                    } catch {
+                        return
+                    }
+                    if let waiter = await self.takePendingRequest(xid: currentXID, id: requestID) {
+                        waiter.continuation.resume(
+                            throwing: ATVError.operationTimeout(cancellationContext)
+                        )
+                    }
+                }
+                request.timeoutTask = task
+            }
+        } onCancel: { [weak self] in
+            Task { [weak self] in
+                await self?.cancelPendingRequest(
+                    xid: currentXID,
+                    id: requestID,
+                    context: cancellationContext
+                )
+            }
+        }
+    }
+
+    /// Actor-isolated helper so the send + timeout Task can remove a
+    /// pending request atomically before resuming its continuation.
+    private func takePendingRequest(xid: Int, id: UUID) -> PendingCompanionRequest? {
+        guard let request = pendingRequests[xid], request.id == id else {
+            return nil
+        }
+        return pendingRequests.removeValue(forKey: xid)
+    }
+
+    private func cancelPendingRequest(
+        xid: Int,
+        id: UUID,
+        context: TimeoutContext
+    ) {
+        guard let request = takePendingRequest(xid: xid, id: id) else {
+            return
+        }
+        request.timeoutTask?.cancel()
+        request.continuation.resume(throwing: ATVError.operationCancelled(context))
+    }
+
+    /// Send an OPACK request without registering a response waiter.
+    ///
+    /// Some Companion cleanup requests, such as `_tiStop`, should be sent with
+    /// request framing but must not delay teardown while waiting for a response
+    /// that may never arrive during connection close.
+    internal func sendRequestWithoutResponse(
+        _ identifier: String,
+        content: OPACK.Value = .dict([])
+    ) async throws(ATVError) {
+        xid += 1
+        let currentXID = xid
+
+        let message = OPACK.Value.dict([
+            (.string("_i"), .string(identifier)),
+            (.string("_t"), .uint(UInt64(CompanionMessageType.request.rawValue))),
+            (.string("_c"), content),
+            (.string("_x"), .uint(UInt64(currentXID))),
+        ])
+
+        let data = OPACK.encode(message)
+        try await connection.send(type: .eOPACK, payload: data)
+    }
+
+    /// Send an OPACK event (no response expected).
+    public func sendEvent(
+        _ identifier: String,
+        content: OPACK.Value = .dict([])
+    ) async throws(ATVError) {
+        xid += 1
+        let currentXID = xid
+
+        let message = OPACK.Value.dict([
+            (.string("_i"), .string(identifier)),
+            (.string("_t"), .uint(UInt64(CompanionMessageType.event.rawValue))),
+            (.string("_c"), content),
+            (.string("_x"), .uint(UInt64(currentXID))),
+        ])
+
+        let data = OPACK.encode(message)
+        try await connection.send(type: .eOPACK, payload: data)
+    }
+
+    // MARK: - Session Management
+
+    /// Send system info to the device (required after pair-verify).
+    ///
+    /// - Parameter timeout: Maximum time to wait for the `_systemInfo` response.
+    public func sendSystemInfo(
+        name: String = "SwiftATV",
+        model: String = "iPhone14,2",
+        rapportIdentifier: String? = nil,
+        clientID: String? = nil,
+        deviceID: String? = nil,
+        timeout: TimeInterval = defaultCompanionTimeout
+    ) async throws(ATVError) {
+        let rpID = rapportIdentifier ?? ClientIdentitySettings.makeRapportIdentifier()
+        let idsID = clientID ?? UUID().uuidString
+        let pubID = deviceID ?? UUID().uuidString
+
+        let content = OPACK.Value.dictionary([
+            ("_bf", .uint(0)),
+            ("_cf", .uint(512)),
+            ("_clFl", .uint(128)),
+            ("_i", .string(rpID)),
+            ("_idsID", .string(idsID)),
+            ("_pubID", .string(pubID)),
+            ("_sf", .uint(256)),
+            ("_sv", .string("170.18")),
+            ("model", .string(model)),
+            ("name", .string(name)),
+        ])
+
+        _ = try await sendRequest("_systemInfo", content: content, timeout: timeout)
+    }
+
+    /// Start a session with the device.
+    ///
+    /// - Parameter timeout: Maximum time to wait for the `_sessionStart` response.
+    public func startSession(timeout: TimeInterval = defaultCompanionTimeout) async throws(ATVError) {
+        let localSID = UInt64.random(in: 0..<UInt64(UInt32.max))
+
+        let content = OPACK.Value.dictionary([
+            ("_srvT", .string("com.apple.tvremoteservices")),
+            ("_sid", .uint(localSID)),
+        ])
+
+        let response = try await sendRequest("_sessionStart", content: content, timeout: timeout)
+        guard let remoteSID = response["_c"]?["_sid"]?.intValue else {
+            throw ATVError.invalidResponse("Companion session start response missing _sid")
+        }
+        sessionID = try Self.sessionIdentifier(localSID: localSID, remoteSID: remoteSID)
+    }
+
+    internal static func sessionIdentifier(localSID: UInt64, remoteSID: Int64) throws(ATVError) -> UInt64 {
+        guard localSID <= UInt64(UInt32.max) else {
+            throw ATVError.invalidResponse("Companion local session ID is out of range")
+        }
+        guard remoteSID >= 0, remoteSID <= Int64(UInt32.max) else {
+            throw ATVError.invalidResponse("Companion remote session ID is out of range")
+        }
+        return (UInt64(remoteSID) << 32) | localSID
+    }
+
+    /// Subscribe to events from the device.
+    public func subscribeEvents(_ events: [String]) async throws(ATVError) {
+        let content = OPACK.Value.dictionary([
+            ("_regEvents", .array(events.map { .string($0) }))
+        ])
+        try await sendEvent("_interest", content: content)
+    }
+
+    /// Initialize touchpad.
+    ///
+    /// - Parameter timeout: Maximum time to wait for the `_touchStart` response.
+    public func startTouch(timeout: TimeInterval = defaultCompanionTimeout) async throws(ATVError) {
+        let content = OPACK.Value.dictionary([
+            ("_height", .uint(1000)),
+            ("_tFl", .uint(0)),
+            ("_width", .uint(1000)),
+        ])
+        _ = try await sendRequest("_touchStart", content: content, timeout: timeout)
+    }
+
+    /// Stop touchpad.
+    public func stopTouch() async throws(ATVError) {
+        let content = OPACK.Value.dictionary([
+            ("_i", .uint(1))
+        ])
+        _ = try await sendRequest("_touchStop", content: content)
+    }
+
+    // MARK: - Frame Handling
+
+    private func handleFrame(_ frame: CompanionFrame) {
+        guard frame.type == .eOPACK || frame.type == .uOPACK || frame.type == .pOPACK else {
+            return
+        }
+
+        let message: OPACK.Value
+        do {
+            message = try OPACK.decode(frame.payload)
+        } catch {
+            connection.handleConnectionClosed(error: error)
+            return
+        }
+
+        // Check message type
+        let messageType = message["_t"]?.intValue.flatMap { Int($0) }
+
+        if messageType == CompanionMessageType.response.rawValue {
+            // Response to a request
+            if let xidVal = message["_x"]?.intValue {
+                let xid = Int(xidVal)
+                if let request = pendingRequests.removeValue(forKey: xid) {
+                    request.timeoutTask?.cancel()
+                    // Check for error
+                    if let errorMsg = message["_em"]?.stringValue {
+                        request.continuation.resume(throwing: ATVError.protocolError(errorMsg))
+                    } else {
+                        request.continuation.resume(returning: message)
+                    }
+                }
+            }
+        } else if messageType == CompanionMessageType.event.rawValue {
+            // Event from device
+            if let identifier = message["_i"]?.stringValue {
+                if let eventContinuation {
+                    if case .dropped = eventContinuation.yield((identifier, message)) {
+                        connection.handleConnectionClosed(error: ATVError.invalidData("Companion event stream limit exceeded"))
+                    }
+                } else {
+                    guard pendingEvents.count < 64 else {
+                        connection.handleConnectionClosed(error: ATVError.invalidData("Companion pending event limit exceeded"))
+                        return
+                    }
+                    pendingEvents.append((identifier, message))
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,29 @@
+# ATV Remote 0.3.6 built-in Xfinity shortcut
+
+Version 0.3.6, build 9, adds a top-right Shortcuts control with Apple's official icon and one preset, **Restart Xfinity Stream**. The control adds no extra row to the main remote. The preset is compiled into the app, and packaging rejects builds that lack its label or the compiled Shortcuts icon.
+
+## Workflow and scope
+
+The preset targets the selected Apple TV, independently of the Apple TV/Samsung navigation segment. It requires an active connection, available touch-swipe capability, and a fresh installed-app list containing the exact Xfinity bundle ID `com.comcast.cim.x2`. That identifier was verified against Apple's tvOS metadata. [Primary-source protocol and identifier audit](atv-remote-xfinity-shortcut-audit.md).
+
+Restart opens Xfinity, waits one second, double-presses the TV button, and waits 600 ms for the switcher. The panel then pauses with left/right controls and an instruction to center Xfinity's card. **Close and reopen** sends one 320 ms upward gesture, waits 500 ms, sends Back, waits 300 ms, and launches the same bundle ID on the same captured session.
+
+The visible card check is part of this preset because the protocol cannot identify the selected switcher card or provide a targeted process-termination acknowledgement. [Apple's documented force-quit gesture](https://support.apple.com/guide/tv/force-quit-an-app-atvb39f389ec/tvos) supplies the switcher/swipe steps. The final label describes the relaunch request; it does not certify process termination or resolution of a streaming issue.
+
+Every awaited step validates the original TV, connection generation, workflow context, and cancellation. Confirmation is consumed once. The Apple command slot stays reserved through the card check; driver guards also block overlapping preparation and other mutating commands. Dismissal, TV changes, backgrounding, connection loss, and errors stop future actions. Late callbacks cannot release a newer run. A started touch attempts one release on its captured original controller; no dismissal retry, reconnection, or continuation on another TV occurs.
+
+The cleanup retains its driver reservation until that original local NIO write finishes. The vendor's one-way event writer has no separate wall-clock deadline; a pathologically stalled write can keep it busy until the original connection is closed. Already delivered gestures cannot be undone. This limitation is documented in the audit. The frozen vendor source is unchanged.
+
+The preset and image are local bundled assets and require no separate workflow import. Apple's unchanged 512px artwork was visually inspected before integration; [provenance](../design/assets/apple-shortcuts-icon-provenance.json) records its official source, timestamp, hash, and dimensions. The remote app icon, per-TV stars, room data, bundle ID, Keychain identity, and pairing/transfer format are retained.
+
+## Validation
+
+- **105 actual-source core XCTest cases passed, zero failures**: the prior 92 plus 13 actual workflow-runner tests. The new cases cover fresh exact-ID/capability gates, preparation order, one paced upward gesture, cancellation during preparation and mid-swipe, passive context replacement, stale targets/sessions, errors stopping later steps, and left/right-only movement. These tests inject effects into the actual used runner; they do not execute remote protocol writes or physically force-quit an app. All 21 harness source/test inputs stayed unchanged. [Core record](../audit/reproductions/atv-remote-0.3.6-core-tests.json), [test log](../audit/reproductions/atv-remote-0.3.6-core-tests.log).
+- **Native simulator build-for-testing passed**, exit 0 in 27.88 seconds. App, core tests, and all four UI test methods compile and link, including the new offline preset-presence check. No simulator boot or UI test execution was requested. [Compilation log](../audit/reproductions/atv-remote-0.3.6-ui-compile.log).
+- **iPhone archive and unsigned IPA validation passed**: arm64, iPhoneOS, iOS 27 minimum, version 0.3.6/build 9, stable `local.roomremote.ios`, valid ZIP, executable permissions, and no signature/profile. Every packaged file matches the archive. All 41 recorded source/test/resource/build inputs and the 21 core-test inputs match their frozen hashes. [Archive log](../audit/reproductions/atv-remote-0.3.6-device-archive.log), [IPA metadata](../audit/reproductions/atv-remote-0.3.6-ipa-validation.json), [combined validation](../audit/reproductions/atv-remote-0.3.6-validation.json), [source snapshot](../audit/reproductions/atv-remote-0.3.6-source-hashes.json).
+- **Bundled preset and icons verified**: the compiled binary contains the preset label and exact app ID; Assets.car contains ShortcutsIcon; the source matches the official artwork's provenance hash. The existing app-icon raster hashes and compiled AppIcon digest match the previously inspected remote icon. Assets.car changes to include the additional Shortcuts artwork.
+- **Final source review found no remaining concrete target/session/cancellation defect.** Driver reservation, captured-controller cleanup, replay prevention, and store lifecycle guards were independently reviewed. This is source review and offline testing, not proof of physical TV behavior.
+
+No physical iPhone installation, TV connection, pairing, live Keychain operation, or switcher/gesture/relaunch verification was performed. Check that Xfinity's card visibly closes once and reopens on the selected TV. [Installation and hardware checks](install-and-test.md).
+
+Download [ATV-Remote-0.3.6-unsigned.ipa](../Build/ATV-Remote-0.3.6-unsigned.ipa), 5,408,365 bytes. SHA-256: `5668c9cd8e8a4bea4942532b23242702ba0b8dbdb211c55117eb05496ad46022`. Sign and install as an update using the existing sideload identity when possible to retain setup.

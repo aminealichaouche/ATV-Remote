@@ -1,0 +1,226 @@
+# AGENTS.md
+
+
+Room Remote final review additionally limits power/audio/focus snapshot streams to the newest value and bounds unauthenticated SRP server public keys to 384 bytes and salts to 64 bytes before BigInt work. Two focused regressions cover these changes; the initial 488-test full-suite evidence is retained separately.
+## Project Overview
+
+This is a frozen Room Remote vendor fork. See `ROOM-REMOTE-CHANGES.md` for the exact local limits and build changes; no public API was changed. Package resolution is offline and Apple-platform only.
+
+SwiftATV is a Swift port of [pyatv](https://github.com/postlund/pyatv), a Python library for controlling Apple TV and AirPlay devices. It uses a multi-protocol facade architecture to provide a unified interface across direct MRP, AirPlay-tunneled MRP, and Companion.
+
+## Build & Test
+
+```bash
+swift build          # Build the library
+swift test           # Run all tests (XCTest + Swift Testing)
+swift package clean  # Clean build artifacts
+
+# Lint (CI runs the same command with --strict)
+swift format lint --recursive Sources Tests
+```
+
+No special setup or environment variables needed. Requires Swift 6.3+ and macOS 13+/iOS 16+.
+
+The package uses `swift-tools-version: 6.3` with Swift 6 language mode (`swiftLanguageModes: [.v6]`) and strict concurrency enabled. All public protocol methods in `Interfaces.swift` are typed-throws (`async throws(ATVError)`); NIO, CryptoKit, and SwiftProtobuf errors are wrapped into `ATVError` at the Companion / MRP / ChaCha20Cipher / HAPPairing boundaries. Classes that manage mutable internal state use `@unchecked Sendable` with encapsulated synchronization. The `MessageDispatcher`, `CompanionProtocolHandler`, `MRPProtocolHandler`, `CompanionPower`/`Audio`/`Keyboard`, and `MRPPlayerState` use Swift actors for safe concurrency.
+
+## Architecture
+
+Room Remote limits Companion buffering and decoder work, serializes encryption/write enqueueing, and fails closed on overflow; details in `ROOM-REMOTE-CHANGES.md`. The application activates only Companion, while retained AirPlay/MRP compile for compatibility.
+
+Companion held-button cancellation after a completed down request attempts one
+bounded key-up on the captured original handler, then propagates cancellation.
+It does not retry the press or reconnect. The original connection may already
+be closed, so cleanup remains best effort. `CompanionServiceTests.swift` records
+ordered encrypted HID messages and monotonic receive times to verify Menu hold,
+Back tap, cancellation during the hold, and cancellation during release wait.
+
+### Key Design Patterns
+
+- **Facade**: `FacadeAppleTV` in `Core/Facade.swift` unifies all protocols behind `AppleTVDevice` and surfaces connection lifecycle events
+- **Per-protocol lifecycle**: The facade tracks active and primary protocols separately. Secondary protocol setup/close failures unregister only that protocol; primary or last-active closes emit terminal device events.
+- **Relayer**: `Core/Relayer.swift` routes method calls to the highest-priority protocol. Default priority is MRP > AirPlay > Companion, and connected facades use the caller's `ConnectOptions.protocols` order.
+- **Connect setup priority**: `ATVClient.connect` takes `ConnectOptions`, attempts implemented control protocols deterministically by option order (default direct MRP > AirPlay-tunneled MRP > Companion), can derive an AirPlay tunnel attempt on port 7000 from a Companion-only discovery when reusable HAP credentials exist, returns `ConnectResult` with primary/active protocols and enriched attempts, and aggregates enriched per-protocol errors if none connect. Single-protocol options stay strict; `ConnectStrategy.allAllowed` attaches every usable allowed protocol.
+- **Setup and runtime timeouts**: `ConnectOptions.requestTimeout` applies to direct MRP and Companion TCP connects and setup request/response exchanges, plus AirPlay HTTP/RTSP setup. `ConnectOptions.runtimeRequestTimeout` applies to post-connect MRP and Companion request/response exchanges.
+- **Pairing/settings persistence**: `PairingHandler.finish()` returns `PairingResult`; `ATVSettings.apply(_:)` copies the paired service identifier and credentials into the correct protocol bucket. `ATVSettingsVault` stores settings under any known device identifier and merges alias records without owning the app's storage backend.
+- **Preflight policy helpers**: `AppleTVConfiguration.connectability(settings:)`, `connectableProtocols(settings:protocols:)`, `preferredPairingService(...)`, and `ServiceInfo.effectivePairingStatus(settings:)` expose local pairing/connectability policy for apps before opening network sessions. Connectable protocol results follow the supplied protocol order, and AirPlay `.notNeeded` still reports missing credentials when the MRP tunnel cannot connect without reusable HAP credentials.
+- **Request waiters**: Direct MRP and AirPlay-tunneled MRP match waiters by request identifier plus expected response type. Direct MRP, AirPlay-tunneled MRP, AirPlay TCP, Companion request, and scanner waiters remove owned continuations on task cancellation.
+- **State-backed capabilities**: Companion and MRP capability providers report unavailable until setup, protocol events, or successful requests prove optional/stateful surfaces are usable. MRP output-device list and mutation capabilities become available after route state arrives from direct MRP or AirPlay-tunneled MRP. Companion and MRP optional setup failures are exposed with capability diagnostics when a public capability is affected. Relayed state prefers `.available` over `.unavailable` across protocols.
+- **Media commands**: `MediaCommandController` exposes broad MediaRemote command discovery and sending. Direct MRP maps `SupportedCommands` into `MediaCommandInfo`; commands requiring unmodeled queue/session/language payloads stay unsupported.
+- **Diagnostic discovery**: `ATVClient.scanWithDiagnostics` preserves discovered devices while exposing non-fatal Bonjour browser/resolver failures and empty TXT records. Filtered and unfiltered scans include `_sleep-proxy._udp` and mark matching configurations `deepSleep`.
+- **Structured timeouts**: `ATVError.operationTimeout` carries `TimeoutContext` with protocol, operation, request identifier, and duration.
+- **Actor-based concurrency**: `MessageDispatcher` uses Swift actors for thread-safe pub-sub messaging
+- **Async/await throughout**: All I/O and protocol communication is async
+
+### Module Layout
+
+The added `ROOM-REMOTE-CHANGES.md` and `UPSTREAM-PYATV-LICENSE.md` record local patches and port attribution.
+
+- `Sources/SwiftATV/` -- Library source
+  - `ATVClient.swift` -- Public facade API: `scan`, `scanWithDiagnostics`, `ConnectOptions`/`ConnectResult`, and `pair`
+  - `Constants.swift` -- All enums (`ATVProtocol`, `Capability`, `MediaRemoteCommand`, `DeviceState`, etc.)
+  - `Interfaces.swift` -- Swift protocol definitions (`RemoteControl`, `CapabilityProvider`, `MediaCommandController`, `AppleTVDevice`, etc.)
+  - `Configuration.swift` -- `AppleTVConfiguration`, `ServiceInfo`, pairing status, and connectability helpers
+  - `DiscoveryIdentifiers.swift` -- Bonjour TXT identifier lookup priority
+  - `Errors.swift` -- `ATVError`, `TimeoutContext`, and `ConnectionAttemptError` (all public API is `throws(ATVError)`)
+  - `Settings.swift` -- `ATVSettings`, `ATVSettingsVault`, local `ClientIdentitySettings`, pairing-result apply helper, and protocol-specific credential settings
+  - `Support/` -- Binary codecs: OPACK, TLV8, BinaryPlistArchive, ChaCha20-Poly1305, AirPlay HAP session encryption
+  - `Core/` -- Relayer, Facade, Scanner (NWBrowser plus NetService TXT resolution, filtered/unfiltered sleep-proxy discovery, identifier-first merge, and diagnostics), MessageDispatcher
+  - `Auth/`
+    - `HAPCredentials.swift` -- Long-term key storage/serialization
+    - `SRPAuth.swift` -- Ed25519/X25519/HKDF primitives
+    - `SRP.swift` -- SRP-6a client matching pyatv's srptools conventions
+    - `HAPPairing.swift` -- Stepwise `HAPPairSetupHandler` + `HAPPairVerifyHandler`
+  - `Protocols/AirPlay/` -- AirPlay 2 support (HAP pair-setup, pair-verify over `/pair-verify`, encrypted control/event/data channels, RTSP SETUP/RECORD, DataStream MRP tunnel, feedback keepalive)
+  - `Protocols/Companion/` -- Companion protocol (TCP framing, OPACK messages, HID commands, SRP pair-setup, pair-verify, apps, event-driven capability/state store, selected media commands, best-effort touch, power, audio volume, RTI text entry, connection-lost propagation; output-device mutation is intentionally handled by MRP/AirPlay-tunneled MRP)
+  - `Protocols/MRP/` -- MRP implementation (checked-in SwiftProtobuf-generated pyatv messages in `Generated/`, source `.proto` files in `Protobuf/`, transport abstraction, direct TCP framing, pair-setup/pair-verify, interfaces, broad media commands, active playback refresh, player-state actor, output-device state and mutation, optional setup diagnostics, connection-lost propagation)
+  - `SwiftATV.docc/` -- DocC catalog (landing page + Getting Started)
+- `Tests/SwiftATVTests/` -- Test suite (XCTest ported from pyatv + Swift Testing for new features)
+
+### Protocol Implementation Status
+
+| Protocol | Status | Notes |
+|----------|--------|-------|
+| Companion | Implemented | Timeout-bounded connection/setup, pair-setup (SRP-6a), pair-verify, NoOp keepalive, remote, apps, users, selected media commands, event-backed power/audio/media-control/keyboard state, best-effort touch with setup diagnostics, connection-lost events, Bonjour identifiers/metadata. Output-device mutation is intentionally MRP/AirPlay-tunneled MRP only |
+| MRP | Implemented | Timeout-bounded direct TCP/protobuf connection plus AirPlay 2 DataStream tunnel transport, pair-setup, pair-verify for direct MRP, remote, broad MediaRemote command query/send, actively refreshed metadata, push, power, audio, output-device state/mutation, optional setup diagnostics, connection-lost events |
+| AirPlay | Implemented | AirPlay 2 HAP pair-setup, pair-verify, encrypted control/event/data channels, timeout-bounded HTTP/RTSP setup, and MRP tunneling including output-device mutation |
+
+## Code Conventions
+
+- Swift protocols map to Python ABCs (e.g., `RemoteControl`, `AppleTVDevice`)
+- `ATVProtocol` avoids collision with Swift's `Protocol` keyword
+- The public facade is `ATVClient`; do not add a public type named `SwiftATV`,
+  because consumers use `SwiftATV` as the module qualifier.
+- All public types conform to `Sendable`
+- `ATVProtocol` only contains supported connection/pairing surfaces; do not add compatibility-only protocol cases without implementation
+- `ATVSettings.clientIdentity` is the local controller/app identity sent to Apple TV protocols, including the stable Companion Rapport identifier used in `_systemInfo`. Do not copy the target Apple TV's identifiers into it; connect and pair validate against that mistake.
+- `Codable` on all settings/config types for JSON persistence
+- `AsyncStream` replaces Python callback-based listeners
+
+## Dependencies
+
+- `apple/swift-nio` -- `NIOCore` and `NIOPosix` for TCP protocol connections
+- `CryptoKit` -- Ed25519, X25519, ChaCha20-Poly1305, HKDF on Apple platforms
+- Linux Crypto is omitted in the Room Remote Apple-only fork.
+- `apple/swift-protobuf` -- Local runtime-only serialization for checked-in MRP protobuf Swift sources; protoc executables and plugin targets are omitted.
+- `attaswift/BigInt` -- 3072-bit modular exponentiation for SRP-6a pair-setup
+
+## Docs stay in sync with the code (required)
+
+Any change that touches public API, adds a feature, adds/removes a
+dependency, or shifts build requirements **must** be reflected in all of the
+following in the same change:
+
+- `CHANGELOG.md` — add a bullet under the appropriate heading. New work goes
+  under `## [Unreleased]` until the next release section is cut.
+- `README.md` — update the Features list, Requirements, Installation
+  snippet, Quick Start examples, Protocol status table, Project Structure
+  tree, and Testing section as applicable.
+- `Sources/SwiftATV/SwiftATV.docc/SwiftATV.md` — keep the overview blurb
+  and the `## Topics` lists in sync with the public types that actually
+  exist. Every public type should appear under one of the Topics headings.
+- `Sources/SwiftATV/SwiftATV.docc/GettingStarted.md` — if the new work
+  changes how a caller scans, pairs, or connects, update the walkthrough
+  and the code snippets. Snippets must compile against the current API
+  (e.g. `ATVSettings` is a struct, so examples use `var settings` and
+  `settings.setCredentials(_:for:)`, not `let`).
+- `AGENTS.md` (this file) — update the Module Layout, Protocol
+  Implementation Status, Dependencies, and any architecture notes.
+- The source-level DocC `///` comments on any type you changed.
+
+Release version bumps should update `ATVClient.version` in
+`Sources/SwiftATV/ATVClient.swift` and the changelog release heading/compare
+links. README and DocC installation snippets intentionally avoid hard-coded
+release numbers.
+
+Treat this as a pre-commit checklist, not a polish pass. Docs that drift
+from the code are worse than no docs — they silently mislead.
+
+## Test Sources
+
+`RoomRemoteSecurityTests.swift` adds ten tests for OPACK depth/nodes/work/payload limits, frame size/backlog limits, valid traffic, pair-verify M4 state, and RTI object-table bounds. The local fork passes 488 tests.
+
+Most tests are ported from pyatv's test suite (XCTest):
+- `ConstantsTests` <- `tests/test_convert.py`
+- `ConfigurationTests` <- `tests/test_conf.py` plus connectability ordering.
+- `HAPCredentialsTests.swift` -- HAP credential serialization, pyatv legacy
+  credential parsing, transient sentinel layout, and Codable coverage.
+- `InterfaceTests` <- `tests/test_interface.py`
+- `OPACKTests` <- `tests/support/test_opack.py` plus SwiftATV object-reference,
+  strict-consumption, and integer-overflow regression coverage.
+- `TLV8Tests` <- `tests/auth/test_hap_tlv8.py` plus strict auth-path
+  malformed-input regression coverage.
+- `ChaCha20Tests` <- `tests/support/test_chacha20.py` plus generic
+  `nonceLength` validation coverage.
+- `DeviceInfoTests` <- `tests/support/test_device_info.py` plus Companion TXT
+  model/version metadata coverage.
+- `CompanionTests` <- `tests/protocols/companion/test_companion.py`
+- `CompanionServiceTests.swift` -- Companion setup resilience when optional
+  `_sessionStart` / `_touchStart` requests time out or `_sessionStart` is
+  malformed after credentialed pair-verify and required setup succeeds, setup
+  diagnostics, plus Companion NoOp keepalive.
+- `ScannerTests.swift` -- SwiftATV Bonjour TXT pairing requirement parsing,
+  Companion identifier extraction, NetService TXT resolver path, scan timeout
+  validation, diagnostics, sleep-proxy deep-sleep discovery, and
+  identifier-first scan-result merging.
+- `SwiftATVConnectTests.swift` -- connect-path validation for requested,
+  malformed-credential, deterministic first-usable priority, service-credential,
+  mandatory-credential, Companion credential requirements, all-allowed strategy,
+  custom facade routing priority, Companion-derived AirPlay tunnel attempts,
+  enriched connect-result metadata, aggregate failures, and client-identity
+  collision checks.
+- `FacadeEventTests.swift` -- facade connection-closed, connection-lost, and
+  per-protocol primary/secondary close behavior plus unsupported metadata
+  errors.
+- `ErrorsTests.swift` -- structured `ATVError.operationTimeout` context.
+- `SettingsTests.swift` -- settings Codable/accessors, settings-vault alias
+  merging, and pairing-result persistence helpers.
+- `TimingTests.swift` -- shared timeout-to-nanoseconds conversion guards and
+  direct Companion/MRP connect-timeout validation.
+- `MRPPlayerStateTests` <- `tests/protocols/mrp/test_player_state.py` plus
+  SwiftATV MRP framing/message, volume, command-result, varint overflow,
+  active metadata refresh, optional setup diagnostics, capability-state gating,
+  output-device mutation/state ingestion, and pair-verify-final-response
+  coverage.
+- `ConsumerCompileTests.swift` -- consumer-style imports proving
+  module-qualified types such as `SwiftATV.ATVProtocol`, typed capabilities,
+  media command options, settings vaults, enriched connect attempts, and scan
+  diagnostics compile alongside `ATVClient` facade calls.
+
+New work uses Swift Testing (`import Testing`, `@Test`, `@Suite`) — both
+frameworks coexist in the same target. Current Swift Testing suites:
+- `SRPTests.swift` -- SRP-6a primitives, canned vector generated by running
+  pyatv's `srptools` dependency. Regenerate with the Python script in
+  `CHANGELOG.md`'s commit history if the SRP math ever changes.
+- `HAPPairSetupTests.swift` -- HAP pair-setup state machine (M1/M3/error
+  TLV handling + ordering checks). Uses the internal `init(clientIdentifier:,
+  srpPrivateKey:)` test seam for determinism.
+- `PlayingDescriptionTests.swift` -- `Playing.description` edge cases.
+- `CompanionAuthEnvelopeTests.swift` -- Companion pair-setup/pair-verify
+  OPACK envelope shape and auth error surfacing.
+- `CompanionConnectionTests.swift` -- Companion auth frame routing,
+  encrypted-frame AAD, close/drain races, and pending-request drain behavior.
+- `CompanionTextInputSessionTests.swift` -- Companion RTI text-input
+  binary-plist encoding/decoding for `_tiStart` and `_tiC` payloads.
+- `AirPlayTests.swift` -- Swift Testing coverage for AirPlay feature parsing,
+  pairing requirement parsing, pairing handler creation, HAP session
+  chunking/authentication, and DataStream protobuf payload parsing including the
+  ambiguous leading-`0x08` length-prefixed case.
+- `RequestWaiterTests.swift` -- Swift Testing coverage for MRP/AirPlay
+  response-type-aware waiter matching and cancellation-aware waiter cleanup.
+- `TestHelpers.swift` -- shared `Data(hex:)` / `.hex` helpers.
+
+Room Remote Apps compatibility fix: `CompanionApps` registers the documented
+`TVRCSessionStart` request with `ProtocolVersionKey: "1.2"` before list/launch
+requests on its original session handler. A controller-scoped coordinator shares in-flight registration, caches success/known unsupported, and allows only a scoped registration timeout to be retried on a later explicit Apps call. Only a `No request handler` rejection
+or a timeout specifically for that optional registration is tolerated; other
+protocol/authentication/connection/cancellation failures propagate. App-list
+responses require a real `_c` dictionary of unique bundle IDs and display names.
+Launch acknowledgements validate `_ec`/`_ed`/`_eu` and `_rT: 8` error envelopes;
+invalid replies never become empty-list/success results. Twelve focused tests
+cover request ordering, primary-documented replies, error envelopes, optional
+registration, and terminal errors without contacting a television.
+
+Primary references: [pyatv protocol documentation](https://pyatv.dev/documentation/protocols/#companion),
+[merged compatibility change #2855](https://github.com/postlund/pyatv/pull/2855),
+and [reported app-launch error envelope #2868](https://github.com/postlund/pyatv/issues/2868).
+This local implementation still needs retesting on the user's physical TV.

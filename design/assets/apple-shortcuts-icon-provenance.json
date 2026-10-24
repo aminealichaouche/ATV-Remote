@@ -1,0 +1,15 @@
+{
+  "asset_name": "ShortcutsIcon",
+  "asset_path": "App/Resources/Assets.xcassets/ShortcutsIcon.imageset/ShortcutsIcon.png",
+  "source_page": "https://apps.apple.com/us/app/shortcuts/id1462947752",
+  "source_developer": "Apple Inc.",
+  "source_artwork_url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b9/c4/0e/b9c40ef3-a30a-f7de-f5e3-f0550da3619c/Placeholder.mill/512x512bb.png",
+  "retrieved_at_utc": "2026-10-13T00:36:14.010039+00:00",
+  "width_pixels": 512,
+  "height_pixels": 512,
+  "file_format": "PNG",
+  "bytes": 149970,
+  "sha256": "ff25c6c861963307460afc9c6df7ac8ae73a392d945fad89b2dc30a55c91ea5a",
+  "modifications": "None. Official Apple CDN PNG stored unchanged. Toolbar rendering scales the asset at runtime.",
+  "copyright": "Apple Inc. Shortcuts app artwork. Included at the user's request to identify remote workflows."
+}

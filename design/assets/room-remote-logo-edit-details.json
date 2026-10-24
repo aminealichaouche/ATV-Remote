@@ -1,0 +1,12 @@
+{
+  "tool": "Built-in image_gen image editor",
+  "mode": "background-extraction",
+  "source": "User image attached in conversation",
+  "file": "room-remote-logo-transparent.png",
+  "width": 1254,
+  "height": 1254,
+  "format": "PNG RGBA",
+  "sha256": "85b5e6e7888df57d5e9a0df7994e3f54f761ed20194ff0a9c7d2068fc953c1d4",
+  "prompt": "Use case: background-extraction. The edit target is ONLY the ORIGINAL user upload: the wide pale-gray image with a blue rounded-square remote icon. The two subsequent transparent cutouts are rejected examples and must NOT be used as the design reference. Extract the original icon with a genuine transparent outer background. Preserve the original flat graphic and original proportions: a light sky-blue upper-left gradient transitioning to darker medium cobalt blue at the lower-right; an opaque pure-white tall rounded remote; one blue circular ring with white center, then four blue circular buttons arranged two by two. Preserve the original remote body length/width and button placements exactly. Remove the pale gray outside the blue rounded square. Clean vector-like edges, no texture, no glow, no halo, no specks, no stray pixels, no drop shadow. Make all blue and white interior pixels opaque. Keep the original softer darker-blue palette, avoiding the oversaturated electric cyan from the rejected cutouts. Square PNG with the complete icon nearly filling the canvas, with a small even transparent margin. No new objects, no text, no changed design.",
+  "note": "AI-edited transparent version; not a pixel-exact crop of the uploaded source."
+}

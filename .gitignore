@@ -1,0 +1,16 @@
+.DS_Store
+Build/
+.build/
+Vendor/**/.build/
+**/xcuserdata/
+**/.swiftpm/
+App/Signing.local.xcconfig
+*.xcarchive
+*.ipa
+audit/reproductions/*
+!audit/reproductions/README.md
+!audit/reproductions/*.py
+!audit/reproductions/*.swift
+!audit/reproductions/*.sh
+!audit/reproductions/*.cjs
+Ready to NAS/

@@ -1,0 +1,6 @@
+// Public defaults. Put your own DEVELOPMENT_TEAM and PRODUCT_BUNDLE_IDENTIFIER
+// in the untracked Signing.local.xcconfig next to this file, for example:
+//   DEVELOPMENT_TEAM = ABCDE12345
+//   PRODUCT_BUNDLE_IDENTIFIER = com.example.atvremote
+PRODUCT_BUNDLE_IDENTIFIER = io.github.atvremote
+#include? "Signing.local.xcconfig"

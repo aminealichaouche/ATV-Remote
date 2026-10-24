@@ -1,0 +1,13 @@
+# ATV Remote 0.3.21 recovers from Companion HID timeouts
+
+Version 0.3.21, build 24, adds single-attempt command delivery and one connection refresh after a scoped Apple TV Companion `_hidC` request timeout. Normal button presses are never replayed, and sleep/power-off stay out of automatic recovery. Unrelated requests, Samsung errors and cancellation remain ordinary failures. The current active state, selected TV ID, command request and epoch must still match before any recovery. The existing connect path invalidates old callbacks, cancels old transport work and reuses the saved pairing for that selected TV. It does not change rooms, devices, pairing keys or timeout values.
+
+The alert now explains that the TV did not reply, the connection is being refreshed, and the press may already have arrived. Xfinity HID failures refresh the connection but leave the shortcut stopped; they never resume its old workflow or replay a gesture. The vendor protocol implementation remains unchanged. [Research and limitations](apple-tv-companion-timeouts.md).
+
+All 178 native iOS 27 unit tests passed with zero failures, including seven new tests for single-send semantics, successful delivery, sleep/off exclusions, wake without replay, unrelated timeout scopes, Samsung isolation and preserved cancellation. The tests include a fake command that would succeed if retried, ensuring a missing acknowledgement remains a failure rather than a duplicated press. [Actual test report](../audit/reproductions/atv-remote-0.3.21-native-unit-tests.json), [log](../audit/reproductions/atv-remote-0.3.21-native-unit-tests.log).
+
+Native build-for-testing passed with all ten UI methods compiled and 46 frozen native inputs unchanged. UI cases were not rerun for this release. No live Apple TV, Wi-Fi signal measurement or hardware recovery test occurred. This improves recovery from an unresponsive session; it does not strengthen the Wi-Fi link or establish the cause of the user’s timeout.
+
+The arm64 unsigned iPhoneOS archive and IPA passed verification. All 12 packaged files byte-match the archive and all 58 frozen inputs remain unchanged. DEBUG fixtures/test types and artwork types are absent from the executable. Bundle ID `local.roomremote.ios`, display name ATV Remote and minimum iOS 27 remain. [Combined validation](../audit/reproductions/atv-remote-0.3.21-validation.json).
+
+Download [ATV-Remote-0.3.21-unsigned.ipa](../Build/ATV-Remote-0.3.21-unsigned.ipa), 5,691,404 bytes. SHA-256: `97c6583276b1974d2b940161213bcabf11088a8a35843a70c7d2678cae002fcf`. Sign with your sideloading tool or archive the source with your paid team for TestFlight.
