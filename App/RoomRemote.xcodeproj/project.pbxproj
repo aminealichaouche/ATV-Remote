@@ -606,6 +606,16 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "FE8DBFF31DCDDA3E9B5B2CFF";
 		};
+		"8D1B1825E8DFF8F3D7D370B8" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "UITests/ScreenshotTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"C572F6FEBB23A2D46608EDD6" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "8D1B1825E8DFF8F3D7D370B8";
+		};
 		"8BF729FFE074CAEE622C0292" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "folder.assetcatalog";
@@ -699,7 +709,7 @@
 		};
 		"2038FC5DE2DABF5DDD799DCA" = {
 			"isa" = "PBXGroup";
-			"children" = ("FE8DBFF31DCDDA3E9B5B2CFF");
+			"children" = ("FE8DBFF31DCDDA3E9B5B2CFF", "8D1B1825E8DFF8F3D7D370B8");
 			"name" = "UITests";
 			"sourceTree" = "<group>";
 		};
@@ -1034,7 +1044,7 @@
 		"0515005E3B09915D72872F28" = {
 			"isa" = "PBXSourcesBuildPhase";
 			"buildActionMask" = "2147483647";
-			"files" = ("46C2765EEA7CE1901F4C33FD");
+			"files" = ("46C2765EEA7CE1901F4C33FD", "C572F6FEBB23A2D46608EDD6");
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
 		"0938638897776C96E4134BB1" = {

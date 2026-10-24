@@ -12,6 +12,14 @@ the room you're in.
 ATV Remote is an independent project and is not affiliated with Apple or
 Samsung.
 
+<p align="center">
+  <img src="docs/screenshots/remote.png" alt="Remote" width="180">
+  <img src="docs/screenshots/apps.png" alt="Apple TV apps" width="180">
+  <img src="docs/screenshots/rooms.png" alt="Rooms" width="180">
+  <img src="docs/screenshots/power.png" alt="Power" width="180">
+  <img src="docs/screenshots/settings.png" alt="Settings" width="180">
+</p>
+
 ## Features
 
 - **One remote for both TVs.** A connection bar shows the room's Apple TV and
@@ -118,3 +126,7 @@ Apple TV support builds on [SwiftATV](Vendor/SwiftATV) (MIT) and
 [pyatv](https://github.com/postlund/pyatv). Each vendored package keeps its own
 license in `Vendor/`, and third-party notices ship with the app in
 `App/Resources/ThirdPartyNotices.txt`.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

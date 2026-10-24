@@ -960,7 +960,18 @@ final class RemoteStore: ObservableObject {
             do {
                 let apps: [RemoteAppInfo]
                 #if DEBUG
-                if CommandLine.arguments.contains("--ui-testing-apps") {
+                if CommandLine.arguments.contains("--ui-testing-screenshots") {
+                    // A fuller demo library for README screenshots.
+                    apps = [RemoteAppInfo(id: "com.comcast.cim.x2", name: "Stream"),
+                            RemoteAppInfo(id: "com.google.ios.youtube", name: "YouTube"),
+                            RemoteAppInfo(id: "com.netflix.Netflix", name: "Netflix"),
+                            RemoteAppInfo(id: "com.apple.TVWatchList", name: "TV"),
+                            RemoteAppInfo(id: "com.apple.TVMusic", name: "Music"),
+                            RemoteAppInfo(id: "com.apple.TVPhotos", name: "Photos"),
+                            RemoteAppInfo(id: "com.apple.podcasts", name: "Podcasts"),
+                            RemoteAppInfo(id: "com.apple.Fitness", name: "Fitness"),
+                            RemoteAppInfo(id: "com.apple.Arcade", name: "Arcade")]
+                } else if CommandLine.arguments.contains("--ui-testing-apps") {
                     apps = [RemoteAppInfo(id: "com.comcast.cim.x2", name: "Stream"),
                             RemoteAppInfo(id: "com.example.Stream", name: "Stream"),
                             RemoteAppInfo(id: "com.apple.TVMusic", name: "Music")]
