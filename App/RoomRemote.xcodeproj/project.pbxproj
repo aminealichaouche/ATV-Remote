@@ -802,8 +802,8 @@
 				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
 				"LD_RUNPATH_SEARCH_PATHS" = "$(inherited) @executable_path/Frameworks";
 				"VERSIONING_SYSTEM" = "apple-generic";
-				"CURRENT_PROJECT_VERSION" = "50";
-				"MARKETING_VERSION" = "3.5.4";
+				"CURRENT_PROJECT_VERSION" = "51";
+				"MARKETING_VERSION" = "3.5.5";
 				"ENABLE_PREVIEWS" = "YES";
 				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
@@ -836,8 +836,8 @@
 				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
 				"LD_RUNPATH_SEARCH_PATHS" = "$(inherited) @executable_path/Frameworks";
 				"VERSIONING_SYSTEM" = "apple-generic";
-				"CURRENT_PROJECT_VERSION" = "50";
-				"MARKETING_VERSION" = "3.5.4";
+				"CURRENT_PROJECT_VERSION" = "51";
+				"MARKETING_VERSION" = "3.5.5";
 				"ENABLE_PREVIEWS" = "YES";
 				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
 				"PROVISIONING_PROFILE_SPECIFIER" = "";

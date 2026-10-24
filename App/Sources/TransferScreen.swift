@@ -73,12 +73,13 @@ struct TransferScreen: View {
         .contentMargins(.top, 12, for: .scrollContent)
         .navigationTitle("Transfer setup")
         .navigationBarTitleDisplayMode(.inline)
-        // Exit replaces the back button so the top bar reads Exit … Share/Import.
+        // A text Back replaces the system back button so the top bar reads Back … Share/Import.
+        // It returns to the screen that opened Transfer setup, or closes it when shown alone.
         .navigationBarBackButtonHidden(embedded)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Exit") { reset(); if embedded { store.sheet = nil } else { dismiss() } }
-                    .accessibilityIdentifier("exitTransfer")
+                Button("Back") { reset(); dismiss() }
+                    .accessibilityIdentifier("transferBack")
             }
             ToolbarItem(placement: .confirmationAction) { primaryAction }
         }

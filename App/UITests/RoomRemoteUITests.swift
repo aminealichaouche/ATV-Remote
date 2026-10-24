@@ -248,7 +248,7 @@ final class RoomRemoteUITests: XCTestCase {
         app.buttons["confirmSetupImport"].tap()
         XCTAssertTrue(app.staticTexts["transferSuccess"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["transferSuccess"].label.contains("Copied starred apps"))
-        app.buttons["exitTransfer"].tap()
+        app.buttons["transferBack"].tap(); app.buttons["Done"].tap()
         XCTAssertEqual(app.buttons["roomMenu"].value as? String, "Receiver Room")
         app.buttons["Apps"].tap()
         XCTAssertTrue(star.waitForExistence(timeout: 3)); XCTAssertEqual(star.value as? String, "Starred")
@@ -338,7 +338,7 @@ final class RoomRemoteUITests: XCTestCase {
         confirm.tap()
         XCTAssertTrue(app.staticTexts["transferSuccess"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["transferSuccess"].label.contains("2 room groups"))
-        app.buttons["exitTransfer"].tap()
+        app.buttons["transferBack"].tap(); app.buttons["Done"].tap()
         XCTAssertEqual(app.buttons["roomMenu"].value as? String, "Receiver Room")
         app.buttons["roomMenu"].tap(); app.buttons["Family Room"].tap()
         XCTAssertTrue(app.otherElements["appleRemoteConnection"].label.contains("Family Apple TV"))
@@ -489,7 +489,7 @@ final class RoomRemoteUITests: XCTestCase {
         XCTAssertTrue(success.waitForExistence(timeout: 5))
         XCTAssertTrue(success.label.contains("Copied starred apps for 1 Apple TV"))
         XCTAssertTrue(success.label.contains("Remote layout and pad copied"))
-        app.buttons["exitTransfer"].tap()
+        app.buttons["transferBack"].tap(); app.buttons["Done"].tap()
         XCTAssertTrue(app.otherElements["remoteTouchpad"].waitForExistence(timeout: 3))
         assertAppleTVRemoteGeometry(in: app, expanded: true)
         app.terminate(); app.launchArguments = ["--ui-testing-wake-save-relaunch"]; app.launch()
@@ -627,7 +627,7 @@ final class RoomRemoteUITests: XCTestCase {
         XCTAssertTrue(app.buttons["shareSetupFile"].exists)
         XCTAssertTrue(primary.isHittable, "Share then opens the share sheet from the top")
         // No share-sheet send, authentication, TV connection or credential export.
-        app.buttons["exitTransfer"].tap()
+        app.buttons["transferBack"].tap()
     }
 
     @MainActor
@@ -657,7 +657,7 @@ final class RoomRemoteUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["transferSuccess"].label.hasPrefix("Added 1 TV."))
         XCTAssertFalse(app.buttons["transferPrimary"].exists)
         XCTAssertFalse(app.buttons["chooseSetupFile"].exists)
-        app.buttons["exitTransfer"].tap()
+        app.buttons["transferBack"].tap(); app.buttons["Done"].tap()
         app.buttons["remoteSettings"].tap(); app.buttons["manageRooms"].tap()
         XCTAssertTrue(app.staticTexts["Living Room"].exists)
         XCTAssertTrue(app.staticTexts["My Living TV"].exists)
@@ -1052,7 +1052,7 @@ final class RoomRemoteUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts[reviewName].exists)
         app.buttons["confirmSetupImport"].tap()
         XCTAssertTrue(app.staticTexts["transferSuccess"].waitForExistence(timeout: 3))
-        app.buttons["exitTransfer"].tap()
+        app.buttons["transferBack"].tap(); app.buttons["Done"].tap()
         app.buttons["roomMenu"].tap()
         XCTAssertTrue(app.buttons[importedRoom].waitForExistence(timeout: 3))
     }
@@ -1136,17 +1136,13 @@ final class RoomRemoteUITests: XCTestCase {
         app.buttons["manageDevices"].tap()
         XCTAssertTrue(app.navigationBars["Your TVs"].waitForExistence(timeout: 3))
         app.swipeUp()
-        // Transfer setup shows Exit in place of a back button and closes Settings.
+        // Transfer setup's text Back returns to whichever screen opened it.
         app.buttons["transferSetup"].tap()
         let transferBar = app.navigationBars["Transfer setup"]
         XCTAssertTrue(transferBar.waitForExistence(timeout: 3))
         XCTAssertFalse(transferBar.buttons["Your TVs"].exists)
-        XCTAssertFalse(transferBar.buttons["Back"].exists)
-        app.buttons["exitTransfer"].tap()
-        XCTAssertTrue(app.buttons["remoteSettings"].waitForExistence(timeout: 3))
-        app.buttons["remoteSettings"].tap()
-        XCTAssertTrue(app.navigationBars["Living Room"].waitForExistence(timeout: 3))
-        app.buttons["manageDevices"].tap()
+        XCTAssertEqual(app.buttons["transferBack"].label, "Back")
+        app.buttons["transferBack"].tap()
         XCTAssertTrue(app.navigationBars["Your TVs"].waitForExistence(timeout: 3))
         tapBack(in: app.navigationBars["Your TVs"], parent: "Living Room")
         XCTAssertTrue(app.navigationBars["Living Room"].waitForExistence(timeout: 3))
@@ -1157,7 +1153,9 @@ final class RoomRemoteUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Living Room"].waitForExistence(timeout: 3))
         app.buttons["transferSetup"].tap()
         XCTAssertTrue(app.navigationBars["Transfer setup"].waitForExistence(timeout: 3))
-        app.buttons["exitTransfer"].tap()
+        app.buttons["transferBack"].tap()
+        XCTAssertTrue(app.buttons["appleDeviceMenu"].waitForExistence(timeout: 3))
+        app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["remoteSettings"].waitForExistence(timeout: 3))
     }
 
