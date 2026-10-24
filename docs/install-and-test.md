@@ -1,12 +1,12 @@
 # Install and test ATV Remote
 
-This native build requires **iOS 27.0 or later**. Build `Build/ATV-Remote-3.5.3-unsigned.ipa` with `python3 scripts/build-ipa.py` for sideload signing, or use a signed archive for TestFlight. Version 3.5.3 (49) adds reset Apple TV recovery through Re-pair and a clearer Rooms list. Since 3.5.2 it includes optional room assignments by default, keeps wireless TV credentials local to each phone, and uses one Share setup button for AirDrop or Save to Files. The Wi-Fi/VPN restriction remains removed. Saved TV pairings, rooms, stars, layouts and other preferences are kept. Your bundle ID is unchanged. See [3.5.3 validation](atv-remote-3.5.3-validation.md).
+This native build requires **iOS 27.0 or later**. Build `Build/ATV-Remote-3.5.4-unsigned.ipa` with `python3 scripts/build-ipa.py` for sideload signing, or use a signed archive for TestFlight. Version 3.5.4 (50) puts Exit and a blue Share/Import button at the top of Transfer setup. 3.5.3 added reset Apple TV recovery through Re-pair and a clearer Rooms list. Since 3.5.2 it includes optional room assignments by default, keeps wireless TV credentials local to each phone, and uses one Share setup button for AirDrop or Save to Files. The Wi-Fi/VPN restriction remains removed. Saved TV pairings, rooms, stars, layouts and other preferences are kept. Your bundle ID is unchanged. See [3.5.4 validation](atv-remote-3.5.4-validation.md).
 
 ## Upload to TestFlight with Xcode
 
 Normal Xcode builds now enable signing. Your developer team and bundle ID are read from the untracked `App/Signing.local.xcconfig` (`DEVELOPMENT_TEAM = YOURTEAMID` and `PRODUCT_BUNDLE_IDENTIFIER = com.example.atvremote`), so they are never committed; without it the bundle ID defaults to `io.github.atvremote`. The generator moves both values there from an older project when missing and preserves signing style and provisioning settings. The unsigned sideload script explicitly disables signing only for its own command-line build. Those unsigned IPAs/archives do not contain a signing team and should not be used for TestFlight.
 
-A signed 3.5.3 (49) archive is built locally at `Build/ATVRemote-3.5.3-TestFlight.xcarchive`. Its signature verifies, a provisioning profile is embedded, and archive metadata contains the saved developer team and bundle ID. It is development-signed; Xcode's App Store Connect upload flow handles distribution signing. This archive has not been uploaded.
+A signed 3.5.4 (50) archive is built locally at `Build/ATVRemote-3.5.4-TestFlight.xcarchive`. Its signature verifies, a provisioning profile is embedded, and archive metadata contains the saved developer team and bundle ID. It is development-signed; Xcode's App Store Connect upload flow handles distribution signing. This archive has not been uploaded.
 
 1. Double-click that archive in Finder to open it in Xcode Organizer. Select it and confirm Team is populated. For future builds, open RoomRemote.xcodeproj, select your paid team under the app target's Signing & Capabilities with Automatically manage signing enabled, choose Any iOS Device (arm64), then Product → Archive.
 2. If needed, create an iOS app record in App Store Connect → Apps → + → New App: name S/ATV Remote, the bundle ID from `App/Signing.local.xcconfig`, primary language English and a unique internal SKU such as atv-remote. Use an existing record if it already matches this bundle.
@@ -17,7 +17,7 @@ A signed 3.5.3 (49) archive is built locally at `Build/ATVRemote-3.5.3-TestFligh
 
 ## Sign and install with a sideloading tool
 
-1. Import `ATV-Remote-3.5.3-unsigned.ipa` into your existing sideloading tool. Install it as an update with the same app/signing identity to retain existing setup when your tool permits it.
+1. Import `ATV-Remote-3.5.4-unsigned.ipa` into your existing sideloading tool. Install it as an update with the same app/signing identity to retain existing setup when your tool permits it.
 2. Use that tool's normal **sign and install** workflow with your own signing identity/profile. The supplied package has no Apple signature or provisioning profile and cannot install directly without this step. Follow any device trust or other setup prompts required by your chosen tool.
 3. Launch **ATV Remote**. The starting screen has no sample TVs, a Living Room profile, and a **settings gear** next to the room menu. The app bundle identifier before signing is the one in `App/Signing.local.xcconfig`, or `io.github.atvremote` by default.
 4. Join your home Wi-Fi. TVs can use Wi-Fi or Ethernet, provided they are on the same reachable home network. Guest networks or client isolation can prevent communication. No computer or relay needs to remain running while you use the remote.

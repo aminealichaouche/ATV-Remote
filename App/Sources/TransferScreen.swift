@@ -73,10 +73,60 @@ struct TransferScreen: View {
         .contentMargins(.top, 12, for: .scrollContent)
         .navigationTitle("Transfer setup")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { reset(); if embedded { store.sheet = nil } else { dismiss() } } } }
+        // Exit replaces the back button so the top bar reads Exit … Share/Import.
+        .navigationBarBackButtonHidden(embedded)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Exit") { reset(); if embedded { store.sheet = nil } else { dismiss() } }
+                    .accessibilityIdentifier("exitTransfer")
+            }
+            ToolbarItem(placement: .confirmationAction) { primaryAction }
+        }
         .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [.roomRemoteSetup, .roomRemoteDirectSetup], allowsMultipleSelection: false) { result in
             do { if let url = try result.get().first { read(url) } }
             catch { self.error = error.localizedDescription }
+        }
+    }
+
+    /// The top-right button runs the next step, so nobody has to scroll to the bottom:
+    /// Share creates the transfer and then opens the share sheet; Import chooses a file,
+    /// unlocks a protected one, then imports the reviewed selection.
+    @ViewBuilder private var primaryAction: some View {
+        if mode == 0, let export {
+            ShareLink(item: SetupShareFile(url: export.url, requiresPhrase: export.code != nil),
+                      preview: SharePreview("ATV Remote setup")) { Text("Share") }
+                .buttonStyle(.glassProminent)
+                .accessibilityIdentifier("transferPrimary")
+        } else if mode == 0 || success == nil {
+            Button(mode == 0 ? "Share" : "Import") { performPrimaryAction() }
+                .buttonStyle(.glassProminent)
+                .disabled(!primaryActionEnabled)
+                .accessibilityIdentifier("transferPrimary")
+        }
+    }
+
+    private var primaryActionEnabled: Bool {
+        guard !busy else { return false }
+        if mode == 0 { return !(selectedIDs.isEmpty && !includeRemotePreferences) }
+        if payload != nil { return importSelection != nil }
+        if file != nil { return !code.isEmpty }
+        return true
+    }
+
+    /// The reviewed import, when the current selection would import something.
+    private var importSelection: (payload: RoomTransferPayload, review: RoomTransferReview)? {
+        guard let payload, let review = try? RoomTransferReview(payload: payload, existing: store.registry),
+              (try? RoomTransferPlan(payload: selectedImport(payload, review: review), existing: store.registry)) != nil else { return nil }
+        return (payload, review)
+    }
+
+    private func performPrimaryAction() {
+        if mode == 0 { prepareExport(); return }
+        if let selection = importSelection {
+            do { try performImportSelection(selection.payload, review: selection.review) }
+            catch { self.error = error.localizedDescription }
+        } else if payload == nil {
+            if file != nil { unlockSetup() } else { showFilePicker = true }
         }
     }
 
