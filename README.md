@@ -1,22 +1,120 @@
-# ATV Remote
+<p align="center">
+  <img src="App/Resources/Assets.xcassets/AppIcon.appiconset/RemoteIcon.png" alt="ATV Remote app icon" width="160">
+</p>
 
-ATV Remote is a native SwiftUI iPhone app targeting **iOS 27.0 or later**. It connects directly to selected Samsung TVs and Apple TVs on the home network. No always-on computer, cloud account, or relay service is required while using the remote.
+<h1 align="center">ATV Remote</h1>
 
-The settings gear opens separate **Samsung TV** and **Apple TV** dropdowns, saved room groups, device pairing, navigation, Samsung volume/mute, Apple TV keyboard and installed apps, input-menu access, and explicit power actions. Each room can contain one TV of each type or only one type. Switching an individual dropdown is temporary until the pair is saved.
+An iPhone remote for Apple TV and Samsung TVs. It talks to your TVs directly
+over your home Wi-Fi, with no cloud account, relay server or always-on computer,
+and groups them into rooms so one tap switches the whole remote to the TVs in
+the room you're in.
 
-The latest release is ATV Remote 3.5.3 (49). **Re-pair** now recovers an Apple TV that was factory reset, keeping its name, rooms and stars, and the Rooms list opens each room with a chevron, shows each TV's type, and hides delete until **Edit**. See [3.5.3 validation](docs/atv-remote-3.5.3-validation.md). Room assignments are included by default and reviewed separately from wireless TV credentials, which stay on each phone. One **Share setup** action offers AirDrop and Save to Files; direct files need no phrase. Keyboard/Apps have six extra points of space above them. The larger tool controls and Sources label remain. See [sharing instructions](docs/share-pairings.md), and [app-controls/icon research](docs/apple-tv-app-controls-and-icons-research.md).
+ATV Remote is an independent project and is not affiliated with Apple or
+Samsung.
 
-- [Upload to TestFlight using the signed archive](docs/install-and-test.md#upload-to-testflight-with-xcode)
-- [Install, pair, and test](docs/install-and-test.md)
-- [Share TV setup and stars with another iPhone](docs/share-pairings.md)
-- [Implemented app design and architecture](docs/app-design.md)
-- [Source audit and adoption decisions](docs/source-audit.md)
-- [Apple TV project audit](docs/apple-source-audit.md)
-- [Samsung project audit](docs/samsung-source-audit.md)
-- [Apple TV alternatives audit](docs/alternatives-audit.md)
+## Features
 
-Native source and Xcode project are in `App/`; reviewed dependencies are in `Vendor/`. The separate interactive design preview uses simulated devices and sends no commands. The native app starts without sample TVs and uses actual protocol connections.
+- **One remote for both TVs.** A connection bar shows the room's Apple TV and
+  Samsung TV side by side; navigation goes to whichever you pick.
+- **Rooms.** Save a Samsung TV and an Apple TV (either can be empty) as a room,
+  then switch rooms from the menu at the top.
+- **Remote layouts.** Choose an Apple TV–style layout or an alternate one, with
+  a D-pad or a swipe touchpad.
+- **Apple TV**
+  - Navigation, Back, Home, Play/Pause; double-tap Home for the app switcher
+    and hold it for Control Center
+  - Type into text fields with the iPhone keyboard
+  - Browse installed apps, launch them and star favorites
+  - Wake and sleep
+- **Samsung TV**
+  - Navigation, volume, mute and the input/source menu
+  - Turn on over the network (Wake-on-LAN) and power off
+  - Scan the TV's IP and MAC address with the camera instead of typing them
+- **Shortcuts.** Restart a stuck Apple TV app, including a one-tap Restart
+  Xfinity Stream.
+- **Share setup.** Send your rooms, TVs and starred apps to another iPhone with
+  AirDrop or Files, optionally protected by a four-word phrase. Each phone
+  pairs with the TVs itself.
 
-To rebuild with Xcode 27 installed, run `python3 scripts/build-ipa.py`; the unsigned IPA is written to `Build/`, which is not committed. For signed builds, put your team and bundle ID in the untracked `App/Signing.local.xcconfig` (`DEVELOPMENT_TEAM = YOURTEAMID`, `PRODUCT_BUNDLE_IDENTIFIER = com.example.atvremote`); `App/Signing.xcconfig` includes it and otherwise defaults to `io.github.atvremote`. Dependencies are vendored locally. This first test IPA uses Release compilation conditions with optimization disabled; DEBUG fixtures and the UI-test reset option are excluded.
+## Requirements
 
-**The new compatibility changes still need a hardware retest.** The user reported Samsung volume/navigation working on the earlier build; physical-device validation has not been performed from this workspace. “S95BD” is preserved as a friendly name, and “S60” is not enough to establish compatibility. Awake Samsung control requires the secure Tizen WebSocket on port 8002. Power-on sends one directed UDP request to the TV's saved IPv4/MAC on the same local subnet; standby network behavior varies. Older Samsung remote protocols remain unsupported. Apple TV uses a community Companion implementation and still needs firmware-specific testing.
+- iPhone with iOS 27 or later, on the same network as the TVs
+- Apple TV (any model that shows a pairing code for remote apps)
+- Samsung Tizen TV that offers the secure remote connection on port 8002
+- Xcode 27 to build
+
+## Build and install
+
+There is no App Store release. Build it yourself and install it with your own
+Apple developer account (Xcode or TestFlight) or a sideloading tool.
+
+1. Create `App/Signing.local.xcconfig` with your team and a bundle ID. The file
+   is ignored by git.
+
+   ```
+   DEVELOPMENT_TEAM = ABCDE12345
+   PRODUCT_BUNDLE_IDENTIFIER = com.example.atvremote
+   ```
+
+   Without it the bundle ID defaults to `io.github.atvremote` and Xcode asks
+   you to choose a team.
+
+2. Generate the Xcode project and open it:
+
+   ```sh
+   python3 scripts/generate-project.py
+   open App/RoomRemote.xcodeproj
+   ```
+
+3. Run on your iPhone, or use **Product → Archive** to upload to TestFlight.
+
+To build an unsigned IPA for a sideloading tool instead, run
+`python3 scripts/build-ipa.py`; it is written to `Build/`.
+
+All dependencies are vendored in `Vendor/`, so no package downloads are needed.
+
+## First setup
+
+1. Open the settings gear → **Manage TVs**.
+2. **Apple TV:** pick it from the discovered list and enter the four-digit code
+   shown on the TV.
+3. **Samsung:** enter a name and the TV's IP address (or scan it), confirm the
+   TV's certificate, then accept the access prompt on the TV. To turn the TV on
+   from the app, add its MAC address and enable *Power On with Mobile* in the
+   TV's network settings.
+4. Allow **Local Network** access when iOS asks.
+
+See [docs/install-and-test.md](docs/install-and-test.md) for the full
+walkthrough and [docs/share-pairings.md](docs/share-pairings.md) for sharing
+setup between phones.
+
+## How it works
+
+| Device | Protocol |
+| --- | --- |
+| Apple TV | Companion protocol, found with Bonjour and paired with the on-screen PIN, using [SwiftATV](Vendor/SwiftATV), a Swift port of [pyatv](https://github.com/postlund/pyatv) |
+| Samsung TV | Tizen remote WebSocket over TLS (port 8002), with the TV's certificate pinned after you confirm it |
+| Samsung power on | A Wake-on-LAN packet sent to the TV's saved MAC address on the local network |
+| Address scanning | Apple's on-device text recognition (VisionKit); no photos are saved |
+
+Pairing keys and Samsung tokens are stored in the iPhone's Keychain and never
+leave the phone, including when you share your setup.
+
+## Project layout
+
+```
+App/Sources     SwiftUI app and TV drivers
+App/Tests       Unit tests
+App/UITests     UI tests
+Vendor/         SwiftATV, SwiftNIO, swift-protobuf, BigInt and other dependencies
+scripts/        Project generation and IPA build scripts
+docs/           Setup guides, design notes and source audits
+design/         App icon sources and an interactive design preview
+```
+
+## Acknowledgements
+
+Apple TV support builds on [SwiftATV](Vendor/SwiftATV) (MIT) and
+[pyatv](https://github.com/postlund/pyatv). Each vendored package keeps its own
+license in `Vendor/`, and third-party notices ship with the app in
+`App/Resources/ThirdPartyNotices.txt`.
