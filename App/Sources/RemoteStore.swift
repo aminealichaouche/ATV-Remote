@@ -561,6 +561,55 @@ final class RemoteStore: ObservableObject {
         }
     }
 
+    /// Switch the selected Samsung to an input through its source menu. The steps hold the
+    /// Samsung command slot, so other Samsung presses can't interleave, and stop as soon as
+    /// the TV, room or connection changes. Keys already sent are never replayed.
+    func selectSamsungInput(_ input: SamsungInput) {
+        guard active, let device = selected(.samsung), state(.samsung).isConnected else {
+            feedback = "Connect the selected Samsung TV first."
+            return
+        }
+        #if DEBUG
+        if CommandLine.arguments.contains("--ui-testing-home") {
+            uiHomeActions += input.keys.map(\.rawValue)
+            feedback = uiHomeActions.joined(separator: ",")
+            return
+        }
+        #endif
+        guard let request = commandRequests.begin(for: .samsung) else { return }
+        let epoch = epochs[.samsung]!.value
+        let driver = driver(.samsung)
+        feedback = "Switching \(device.name) to \(input.title)…"
+        commandTasks[.samsung] = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                if self.commandRequests.finish(request, for: .samsung) {
+                    self.commandTasks.removeValue(forKey: .samsung)
+                }
+            }
+            do {
+                for step in input.steps {
+                    guard self.samsungInputIsCurrent(request, epoch: epoch, deviceID: device.id) else { return }
+                    switch step {
+                    case .key(let action): try await driver.send(action, toDeviceID: device.id)
+                    case .pause(let duration): try await Task.sleep(for: duration)
+                    }
+                }
+                guard self.samsungInputIsCurrent(request, epoch: epoch, deviceID: device.id) else { return }
+                self.feedback = "Switched \(device.name) to \(input.title)."
+            } catch {
+                guard self.samsungInputIsCurrent(request, epoch: epoch, deviceID: device.id) else { return }
+                self.feedback = error.localizedDescription
+                self.alertMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func samsungInputIsCurrent(_ request: UUID, epoch: UInt64, deviceID: String) -> Bool {
+        commandRequests.accepts(request, for: .samsung) && active &&
+            epochs[.samsung]!.accepts(epoch) && selected(.samsung)?.id == deviceID && !Task.isCancelled
+    }
+
     var homeButtonBinding: HomeButtonBinding? {
         guard active, let device = selected(navigationTarget), state(navigationTarget).isConnected else { return nil }
         return HomeButtonBinding(kind: navigationTarget, deviceID: device.id, epoch: epochs[navigationTarget]!.value)

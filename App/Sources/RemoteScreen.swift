@@ -373,7 +373,7 @@ struct RemoteScreen: View {
             if store.navigationTarget == .appleTV {
                 toolButton("Apps", icon: "square.grid.2x2", enabled: store.state(.appleTV).isConnected) { store.openApps() }
             } else {
-                toolButton("Sources", icon: "rectangle.connected.to.line.below", enabled: store.state(.samsung).isConnected) { store.send(.source, to: .samsung) }
+                sourcesMenu
             }
             if remoteLayout == .standard {
                 toolButton("Power", icon: "power", enlarged: false) { store.sheet = .power }
@@ -388,6 +388,28 @@ struct RemoteScreen: View {
                 .frame(maxWidth: .infinity, minHeight: enlarged ? toolButtonHeight : 44)
                 .contentShape(Rectangle())
         }.disabled(!enabled)
+    }
+
+    /// Inputs are picked in the app; the TV gets there through its own source menu.
+    private var sourcesMenu: some View {
+        Menu {
+            ForEach(SamsungInput.allCases) { input in
+                Button(input.title) { store.selectSamsungInput(input) }
+                    .accessibilityIdentifier("samsungInput.\(input.rawValue)")
+            }
+            Divider()
+            Button("Open source menu on TV", systemImage: "rectangle.connected.to.line.below") {
+                store.send(.source, to: .samsung)
+            }.accessibilityIdentifier("samsungSourceMenu")
+        } label: {
+            Label("Sources", systemImage: "rectangle.connected.to.line.below")
+                .font(.system(size: toolFontSize))
+                .frame(maxWidth: .infinity, minHeight: toolButtonHeight)
+                .contentShape(Rectangle())
+        }
+        .menuOrder(.fixed)
+        .disabled(!store.state(.samsung).isConnected)
+        .accessibilityIdentifier("remoteSources")
     }
 
     @ViewBuilder

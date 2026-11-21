@@ -1122,6 +1122,33 @@ final class RoomRemoteUITests: XCTestCase {
     }
 
     @MainActor
+    func testSourcesMenuSwitchesSamsungInputThroughItsSourceMenu() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        // --ui-testing-home records each key instead of contacting a TV.
+        app.launchArguments = ["--ui-testing-reset", "--ui-testing-home"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Samsung"].waitForExistence(timeout: 10))
+        app.buttons["Samsung"].tap()
+        let sources = app.buttons["remoteSources"]
+        XCTAssertTrue(sources.waitForExistence(timeout: 3))
+        sources.tap()
+        XCTAssertTrue(app.buttons["samsungInput.2"].waitForExistence(timeout: 3))
+        XCTAssertEqual(app.buttons["samsungInput.2"].label, "HDMI 2")
+        XCTAssertTrue(app.buttons["samsungSourceMenu"].exists)
+        app.buttons["samsungInput.2"].tap()
+        let log = app.staticTexts["homeActionLog"]
+        let hdmi2 = (["source"] + Array(repeating: "left", count: 8) + Array(repeating: "right", count: 4) + ["select"]).joined(separator: ",")
+        _ = expectation(for: NSPredicate(format: "label == %@", hdmi2), evaluatedWith: log)
+        waitForExpectations(timeout: 3)
+        // The TV's own menu is still one tap away.
+        sources.tap()
+        app.buttons["samsungSourceMenu"].tap()
+        _ = expectation(for: NSPredicate(format: "label == %@", hdmi2 + ",source"), evaluatedWith: log)
+        waitForExpectations(timeout: 3)
+    }
+
+    @MainActor
     func testSettingsSubmenusReturnWithBackButtons() throws {
         continueAfterFailure = false
         let app = XCUIApplication()

@@ -24,7 +24,7 @@ Established sessions are retained by stable TV identity for visited rooms. Selec
 | TV volume and mute | Selected Samsung; mute toggles and does not claim an observed mute state |
 | Keyboard | Selected Apple TV; checks for an active text field and appends typed text, up to 16 KB per send |
 | Apps | Registers an optional TVRC remote session, requests the selected Apple TV’s installed apps, and launches a returned app identifier; TV errors remain visible with a reload button |
-| Inputs | Opens the selected Samsung's source menu; no verified direct HDMI shortcut |
+| Inputs | Sources lists TV and HDMI 1–4. Choosing one opens the selected Samsung's source menu, presses Left to the menu's first entry (SmartThings), Right past Connected Devices to that input, then Enter (about 2–2.5 s). **Open source menu on TV** only opens it. Direct `KEY_HDMI1`–`4` keys were ignored by the tested Samsung, so they are not used. |
 | Power | Wake/sleep the selected connected Apple TV; request Samsung power-on using its saved MAC even when disconnected; send one power toggle to a connected Samsung |
 
 The app reports **Sent to [device]** after a command send succeeds. In particular, Samsung transport completion does not acknowledge that the TV applied the key; the visible response on the television must be checked. Controls require a connected session. Commands are not saved for replay after reconnect. Rapid taps while a main-screen command is in progress may be ignored; held-key repeat and continuous Apple TV touch events are not implemented.

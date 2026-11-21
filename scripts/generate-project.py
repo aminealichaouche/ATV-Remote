@@ -97,7 +97,7 @@ main_group = add("main.group", isa="PBXGroup", children=[sources,tests,ui_group,
 
 common = {"CLANG_ENABLE_MODULES":"YES", "SDKROOT":"iphoneos", "ARCHS":"arm64", "ONLY_ACTIVE_ARCH":"YES", "IPHONEOS_DEPLOYMENT_TARGET":"27.0", "SWIFT_VERSION":"6.0", "SWIFT_STRICT_CONCURRENCY":"complete", "CODE_SIGNING_ALLOWED":"YES", "CODE_SIGNING_REQUIRED":"YES", "CODE_SIGN_IDENTITY":"Apple Development", "CODE_SIGN_STYLE":"Automatic", "SWIFT_EMIT_LOC_STRINGS":"YES", "SUPPORTED_PLATFORMS":"iphoneos iphonesimulator", "TARGETED_DEVICE_FAMILY":"1", "ENABLE_USER_SCRIPT_SANDBOXING":"YES"}
 project_configs = config_list("project.config", common)
-app_configs = config_list("app.config", {**common,"PRODUCT_NAME":"RoomRemote","INFOPLIST_FILE":"Resources/Info.plist","GENERATE_INFOPLIST_FILE":"NO","ASSETCATALOG_COMPILER_APPICON_NAME":"AppIcon","LD_RUNPATH_SEARCH_PATHS":"$(inherited) @executable_path/Frameworks","VERSIONING_SYSTEM":"apple-generic","CURRENT_PROJECT_VERSION":"51","MARKETING_VERSION":"3.5.5","ENABLE_PREVIEWS":"YES"})
+app_configs = config_list("app.config", {**common,"PRODUCT_NAME":"RoomRemote","INFOPLIST_FILE":"Resources/Info.plist","GENERATE_INFOPLIST_FILE":"NO","ASSETCATALOG_COMPILER_APPICON_NAME":"AppIcon","LD_RUNPATH_SEARCH_PATHS":"$(inherited) @executable_path/Frameworks","VERSIONING_SYSTEM":"apple-generic","CURRENT_PROJECT_VERSION":"55","MARKETING_VERSION":"3.5.7","ENABLE_PREVIEWS":"YES"})
 app_sources = add("app.sources", isa="PBXSourcesBuildPhase", buildActionMask="2147483647", files=source_builds, runOnlyForDeploymentPostprocessing="0")
 app_frameworks = add("app.frameworks", isa="PBXFrameworksBuildPhase", buildActionMask="2147483647", files=[package_build], runOnlyForDeploymentPostprocessing="0")
 app_resources = add("app.resources", isa="PBXResourcesBuildPhase", buildActionMask="2147483647", files=[assets_build,notices_build,privacy_build], runOnlyForDeploymentPostprocessing="0")
@@ -137,5 +137,9 @@ info={"CFBundleDevelopmentRegion":"en","CFBundleDisplayName":"ATV Remote","CFBun
 info.update({"NSFaceIDUsageDescription":"Confirm it is you before sharing saved TV pairings with another iPhone.","NSCameraUsageDescription":"Read the IP and MAC addresses shown on your TV to fill its setup.","LSSupportsOpeningDocumentsInPlace":True,"UTExportedTypeDeclarations":[{"UTTypeIdentifier":"local.roomremote.transfer","UTTypeDescription":"ATV Remote encrypted setup","UTTypeConformsTo":["public.data","public.content"],"UTTypeTagSpecification":{"public.filename-extension":["roomremote"],"public.mime-type":"application/vnd.roomremote.transfer"}}],"CFBundleDocumentTypes":[{"CFBundleTypeName":"ATV Remote setup","CFBundleTypeRole":"Viewer","LSHandlerRank":"Owner","LSItemContentTypes":["local.roomremote.transfer","io.github.atvremote.direct-setup"]}]})
 info["UTExportedTypeDeclarations"].append({"UTTypeIdentifier":"io.github.atvremote.direct-setup","UTTypeDescription":"ATV Remote setup","UTTypeConformsTo":["public.data","public.content"],"UTTypeTagSpecification":{"public.filename-extension":["atvsetup"],"public.mime-type":"application/vnd.atvremote.setup"}})
 info["UIApplicationSceneManifest"] = {"UIApplicationSupportsMultipleScenes":False}
+# Export compliance: only standard algorithms, run through Apple's TLS, CryptoKit and
+# CommonCrypto (plus SRP-6a for Apple TV pairing authentication), to support TV control.
+# This answers App Store Connect's encryption question for every upload.
+info["ITSAppUsesNonExemptEncryption"] = False
 (resources_path/"Info.plist").write_bytes(plistlib.dumps(info))
 print(project)
